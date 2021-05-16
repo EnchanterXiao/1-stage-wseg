@@ -3,8 +3,8 @@
 ## Your values here:
 #
 DS=pascal_voc
-EXP=
-RUN_ID=
+EXP=v0516
+RUN_ID=ae
 #
 ##
 

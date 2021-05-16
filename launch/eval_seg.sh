@@ -5,9 +5,9 @@ FILELIST=data/val_voc.txt # validation
 
 ## You values here:
 #
-OUTPUT_DIR=
-EXP=
-RUN_ID=
+OUTPUT_DIR=./output
+EXP=v0513
+RUN_ID=ae
 #
 ##
 

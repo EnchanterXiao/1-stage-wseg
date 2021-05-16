@@ -79,7 +79,7 @@ class MaskToTensor:
         gt_labels = torch.arange(0, 21)
         gt_labels = gt_labels.unsqueeze(-1).unsqueeze(-1)
         mask = mask.unsqueeze(0).type_as(gt_labels)
-        mask = torch.eq(mask, gt_labels).float()
+        mask = torch.eq(mask, gt_labels).int()
         return image, mask
 
 class MaskColourJitter:

@@ -42,11 +42,11 @@ __C.TEST = AttrDict()
 __C.TEST.METHOD = "multiscale" # multiscale | crop
 __C.TEST.DATA_ROOT = "/data/your_directory"
 __C.TEST.SCALES = [1, 0.5, 1.5, 2.0]
-__C.TEST.FLIP = True
+__C.TEST.FLIP = False
 __C.TEST.PAD_SIZE = [1024, 1024]
 __C.TEST.CROP_SIZE = [448, 448]
 __C.TEST.CROP_GRID_SIZE = [2, 2]
-__C.TEST.BATCH_SIZE = 8
+__C.TEST.BATCH_SIZE = 4
 __C.TEST.BG_POW = 3
 __C.TEST.NUM_CLASSES = 21
 

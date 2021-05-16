@@ -149,7 +149,8 @@ class VOCSegmentation(PascalVOC):
                                      tf.MaskHFlip(), \
                                      tf.MaskColourJitter(p = 1.0), \
                                      tf.MaskNormalise(self.MEAN, self.STD), \
-                                     tf.MaskToTensor()])
+                                     # tf.MaskToTensor()
+                                     ])
 
     def __len__(self):
         return len(self.images)
@@ -177,7 +178,7 @@ class VOCSegmentation(PascalVOC):
         # general resize, normalize and toTensor
         image, mask = self.transform(image, mask)
 
-        return image, labels, os.path.basename(self.images[index])
+        return image, labels, os.path.basename(self.images[index]), mask
 
     @property
     def pred_offset(self):
