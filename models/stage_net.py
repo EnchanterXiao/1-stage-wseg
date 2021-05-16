@@ -359,3 +359,13 @@ def network_factory(cfg):
         return BaselineCAM
     else:
         raise NotImplementedError("Unknown model '{}'".format(cfg.MODEL))
+
+if __name__ == '__main__':
+    from core.config import cfg, cfg_from_file, cfg_from_list
+    from functools import partial
+
+    # Reading the config
+    cfg_from_file('../configs/voc_resnet38.yaml')
+    net = network_factory(cfg.NET)(cfg.NET)
+    print("Config: \n", cfg)
+    print(net)
