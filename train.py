@@ -28,13 +28,15 @@ from utils.metrics import compute_jaccard
 # see: https://github.com/pytorch/pytorch/issues/15054#issuecomment-450191923
 # and: https://github.com/pytorch/pytorch/issues/14456
 torch.backends.cudnn.benchmark = True
-#torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.deterministic = True
 DEBUG = False
+
 
 def rescale_as(x, y, mode="bilinear", align_corners=True):
     h, w = y.size()[2:]
     x = F.interpolate(x, size=[h, w], mode=mode, align_corners=align_corners)
     return x
+
 
 class DecTrainer(BaseTrainer):
 
@@ -137,15 +139,15 @@ class DecTrainer(BaseTrainer):
         timer = Timer("New Epoch: ")
         train_step = partial(self.step, train=True, visualise=False)
 
-        for i, (image, gt_labels, _) in enumerate(self.trainloader):
+        for i, (image, gt_labels, _, gt_masks) in enumerate(self.trainloader):
 
             # masks
             losses, _, _, _ = train_step(epoch, image, gt_labels)
 
             if self.fixed_batch is None:
                 self.fixed_batch = {}
-                self.fixed_batch["image"]   = image.clone()
-                self.fixed_batch["labels"]  = gt_labels.clone()
+                self.fixed_batch["image"] = image.clone()
+                self.fixed_batch["labels"] = gt_labels.clone()
                 torch.save(self.fixed_batch, self.fixed_batch_path)
 
             for loss_key, loss_val in losses.items():
@@ -153,10 +155,10 @@ class DecTrainer(BaseTrainer):
 
             # intermediate logging
             if i % 10 == 0:
-                msg =  "Loss [{:04d}]: ".format(i)
+                msg = "Loss [{:04d}]: ".format(i)
                 for loss_key, loss_val in losses.items():
                     msg += "{}: {:.4f} | ".format(loss_key, loss_val)
-                
+
                 msg += " | Im/Sec: {:.1f}".format(i * cfg.TRAIN.BATCH_SIZE / timer.get_stage_elapsed())
                 print(msg)
                 sys.stdout.flush()
@@ -168,7 +170,7 @@ class DecTrainer(BaseTrainer):
 
         def publish_loss(stats, name, t, prefix='data/'):
             print("{}: {:4.3f}".format(name, stats.summarize_key(name)))
-            #self.writer.add_scalar(prefix + name, stats.summarize_key(name), t)
+            # self.writer.add_scalar(prefix + name, stats.summarize_key(name), t)
 
         for stat_key in stat.vals.keys():
             publish_loss(stat, stat_key, epoch)
@@ -178,14 +180,14 @@ class DecTrainer(BaseTrainer):
             print("Learning rate [{}]: {:4.3e}".format(ii, l['lr']))
             self.writer.add_scalar('lr/enc_group_%02d' % ii, l['lr'], epoch)
 
-        #self.writer.add_scalar('lr/bg_baseline', self.enc.module.mean.item(), epoch)
+        # self.writer.add_scalar('lr/bg_baseline', self.enc.module.mean.item(), epoch)
 
         # visualising
         self.enc.eval()
         with torch.no_grad():
             self.step(epoch, self.fixed_batch["image"], \
-                             self.fixed_batch["labels"], \
-                             train=False, visualise=True)
+                      self.fixed_batch["labels"], \
+                      train=False, visualise=True)
 
     def _mask_rgb(self, masks, image_norm):
         # visualising masks
@@ -221,7 +223,7 @@ class DecTrainer(BaseTrainer):
         def eval_batch(image, gt_labels):
 
             losses, cls, masks, mask_logits = \
-                    self.step(epoch, image, gt_labels, train=False, visualise=False)
+                self.step(epoch, image, gt_labels, train=False, visualise=False)
 
             for loss_key, loss_val in losses.items():
                 stat.update_stats(loss_key, loss_val)
@@ -240,8 +242,7 @@ class DecTrainer(BaseTrainer):
             means.append(x.mean())
             stds.append(x.std())
 
-        for n, (image, gt_labels, _) in enumerate(loader):
-
+        for n, (image, gt_labels, _, gt_masks) in enumerate(loader):
             with torch.no_grad():
                 cls_raw, masks_all, mask_logits = eval_batch(image, gt_labels)
 
@@ -274,7 +275,7 @@ class DecTrainer(BaseTrainer):
         for stat_key in stat.vals.keys():
             writer.add_scalar('all/{}'.format(stat_key), stat.summarize_key(stat_key), epoch)
 
-        if checkpoint and epoch >= cfg.TRAIN.PRETRAIN: 
+        if checkpoint and epoch >= cfg.TRAIN.PRETRAIN:
             # we will use mAP - mask_loss as our proxy score
             # to save the best checkpoint so far
             proxy_score = 1 - stat.summarize_key("loss")
@@ -303,6 +304,7 @@ class DecTrainer(BaseTrainer):
         visual_logits = torch.cat(visual, -1)
         self._visualise_grid(visual_logits, gt_labels, epoch, scores=cls_out)
 
+
 if __name__ == "__main__":
     args = get_arguments(sys.argv[1:])
 
@@ -317,19 +319,29 @@ if __name__ == "__main__":
     torch.manual_seed(0)
 
     timer = Timer()
+
+
     def time_call(func, msg, *args, **kwargs):
         timer.reset_stage()
         func(*args, **kwargs)
         print(msg + (" {:3.2}m".format(timer.get_stage_elapsed() / 60.)))
 
+
     for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS + 1):
         print("Epoch >>> ", epoch)
-        
-        log_int = 5 if DEBUG else 2
-        if epoch % log_int == 0:
-            with torch.no_grad():
-                if not DEBUG:
-                    time_call(trainer.validation, "Validation / Train: ", epoch, trainer.writer, trainer.trainloader_val)
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader, checkpoint=True)
+
+        with torch.no_grad():
+            if epoch == 0:
+                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                          checkpoint=False)
+            else:
+                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                          checkpoint=True)
+        # # log_int = 5 if DEBUG else 2
+        # # if epoch % log_int == 0:
+        #     with torch.no_grad():
+        #         if not DEBUG:
+        #             time_call(trainer.validation, "Validation / Train: ", epoch, trainer.writer, trainer.trainloader_val)
+        #         time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader, checkpoint=True)
 
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
