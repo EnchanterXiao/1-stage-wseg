@@ -4,7 +4,7 @@
 #
 DS=pascal_voc
 EXP=v0516
-RUN_ID=ae
+RUN_ID=netv1
 #
 ##
 
