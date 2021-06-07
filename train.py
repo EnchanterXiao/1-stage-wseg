@@ -88,16 +88,18 @@ class DecTrainer(BaseTrainer):
         image_raw = self.denorm(image.clone())
 
         # classification
-        cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask = self.enc(image, image_raw, gt_labels)
+        cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask, loss_at = self.enc(image, image_raw, gt_labels)
 
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
+        loss_at = torch.mean(loss_at, dim=0)
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
-                  "loss_fg": cls_fg.mean().item()}
+                  "loss_fg": cls_fg.mean().item(),
+                  "loss_at": loss_at.item()}
 
-        loss = loss_cls.clone()
+        loss = loss_cls.clone() + loss_at.clone()
         if "dec" in masks:
             loss_mask = loss_mask.mean()
 
