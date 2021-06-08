@@ -548,7 +548,7 @@ def network_factory(cfg):
             x = self.forward_backbone(y)
             Spatial_weight, attention_map = self.attention(x)
 
-            x = torch.multiply(x, Spatial_weight)
+            x = torch.mul(x, Spatial_weight)
             cls = self.forward_cls(x)
             logits, masks = self.forward_mask(x, y.size()[-2:])
 
