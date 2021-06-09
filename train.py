@@ -99,7 +99,7 @@ class DecTrainer(BaseTrainer):
                   "loss_fg": cls_fg.mean().item(),
                   "loss_at": loss_at.item()}
 
-        loss = loss_cls.clone() + loss_at.clone()
+        loss = loss_cls.clone() + loss_at.clone()*50
         if "dec" in masks:
             loss_mask = loss_mask.mean()
 
@@ -157,7 +157,7 @@ class DecTrainer(BaseTrainer):
 
             # intermediate logging
             if i % 10 == 0:
-                msg = "Loss [{:04d}]: ".format(i)
+                msg = "Epoch[{}] Loss [{:04d}]: ".format(epoch, i)
                 for loss_key, loss_val in losses.items():
                     msg += "{}: {:.4f} | ".format(loss_key, loss_val)
 
