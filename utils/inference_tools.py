@@ -12,11 +12,14 @@ from datasets.pascal_voc_ms import MultiscaleLoader, CropLoader
 
 class ResultWriter:
     
-    def __init__(self, cfg, palette, out_path, verbose=True):
+    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True):
         self.cfg = cfg
         self.palette = palette
         self.root = out_path
         self.verbose = verbose
+        self.prospect_thresh = prospect_thresh
+        self.background_thresh = background_thresh
+
 
     def _mask_overlay(self, mask, image, alpha=0.3):
         """Creates an overlayed mask visualisation"""
@@ -51,11 +54,17 @@ class ResultWriter:
         img_orig255 = np.ascontiguousarray(img_orig255)
 
         merged_mask = self._merge_masks(all_masks, pads, labels, img_orig255.shape[:2])
-        pred = np.argmax(merged_mask, 0)
-
         # CRF
         pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
         pred_crf = np.argmax(pred_crf, 0)
+
+
+        index = np.where(merged_mask[1:, :, :]<self.prospect_thresh)
+        index[0] += 1
+        merged_mask[1, index] = 0
+        pred = np.argmax(merged_mask, 0)
+
+
 
         filepath = os.path.join(self.root, img_name + '.png')
         scipy.misc.imsave(filepath, pred.astype(np.uint8))
@@ -103,7 +112,7 @@ class MergeMultiScale(ResultWriter):
 
         # discounting BG
         #mean_mask[0, ::] *= 0.5
-        mean_mask[0, ::] = np.power(mean_mask[0, ::], self.cfg.BG_POW)
+        mean_mask[0, ::] = np.power(mean_mask[0, ::], self.cfg.BG_POW)  # 三次方
 
         return mean_mask
 
