@@ -163,7 +163,7 @@ def network_factory(cfg):
             # note, that the masks contain the background as the first channel
             return logits, masks
 
-        def forward(self, y, _, labels=None):
+        def forward(self, y, _=None, labels=None):
             test_mode = labels is None
 
             x = self.forward_backbone(y)
@@ -542,13 +542,13 @@ def network_factory(cfg):
             # note, that the masks contain the background as the first channel
             return logits, masks
 
-        def forward(self, y, _, labels=None):
+        def forward(self, y, _=None, labels=None):
             test_mode = labels is None
 
             x = self.forward_backbone(y)
             Spatial_weight, attention_map = self.attention(x)
 
-            x = torch.multiply(x, Spatial_weight)
+            x = torch.mul(x, Spatial_weight)
             cls = self.forward_cls(x)
             logits, masks = self.forward_mask(x, y.size()[-2:])
 
