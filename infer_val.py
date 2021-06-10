@@ -47,6 +47,8 @@ if __name__ == '__main__':
 
     # loading the model
     args = get_arguments(sys.argv[1:])
+    prospect_thresh = 0.5
+    background_thresh = 0.0
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -56,6 +58,9 @@ if __name__ == '__main__':
     # initialising the dirs
     check_dir(args.mask_output_dir, "vis")
     check_dir(args.mask_output_dir, "crf")
+    check_dir(args.mask_output_dir, "no_crf")
+    check_dir(args.mask_output_dir, "heatmap")
+    check_dir(args.mask_output_dir, "scoremap")
 
     # Loading the model
     model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
@@ -86,7 +91,7 @@ if __name__ == '__main__':
 
     palette = dataset.get_palette()
     pool = mp.Pool(processes=args.workers)
-    writer = WriterClass(cfg.TEST, palette, args.mask_output_dir)
+    writer = WriterClass(cfg.TEST, palette, args.mask_output_dir, prospect_thresh=prospect_thresh, background_thresh=background_thresh)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
@@ -110,7 +115,7 @@ if __name__ == '__main__':
         masks_pred = masks_pred.cpu()
         labels = labels.type_as(masks_pred)
 
-        #writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
+        # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
         pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
 
         timer.update_progress(float(iter + 1) / N)
