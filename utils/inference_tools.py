@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import scipy.misc
+import matplotlib.pyplot as plt
 
 import torch.nn.functional as F
 
@@ -44,6 +45,15 @@ class ResultWriter:
         """
         raise NotImplementedError
 
+    def _scoremap2rgb(self, scoremap):
+        hm = plt.cm.hot(scoremap)[:, :, :3]
+        # hm = np.array(Image.fromarray((hm * 255).astype(np.uint8), 'RGB'))
+        return hm
+
+    def _heatmap_overlay(self, scoremap, image, alpha=0.3):
+        heatmap = self._scoremap2rgb(scoremap)
+        return alpha * image + (1 - alpha) * heatmap
+
     def save(self, img_path, img_orig, all_masks, labels, pads, gt_mask):
 
         img_name = os.path.basename(img_path).rstrip(".jpg")
@@ -54,19 +64,22 @@ class ResultWriter:
         img_orig255 = np.ascontiguousarray(img_orig255)
 
         merged_mask = self._merge_masks(all_masks, pads, labels, img_orig255.shape[:2])
+        score_map = np.max(merged_mask, axis=0)
+
         # CRF
         pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
+        index = list(np.where(pred_crf[1:, :, :] < self.prospect_thresh))
+        index[0] += 1
+        pred_crf[index] = 0
         pred_crf = np.argmax(pred_crf, 0)
 
 
-        index = np.where(merged_mask[1:, :, :]<self.prospect_thresh)
+        index = list(np.where(merged_mask[1:, :, :]<self.prospect_thresh))
         index[0] += 1
-        merged_mask[1, index] = 0
+        merged_mask[index] = 0
         pred = np.argmax(merged_mask, 0)
 
-
-
-        filepath = os.path.join(self.root, img_name + '.png')
+        filepath = os.path.join(self.root, "no_crf", img_name + '.png')
         scipy.misc.imsave(filepath, pred.astype(np.uint8))
 
         filepath = os.path.join(self.root, "crf", img_name + '.png')
@@ -82,6 +95,11 @@ class ResultWriter:
             filepath = os.path.join(self.root, "vis", img_name + '.png')
             overlay255 = np.round(overlay * 255.).astype(np.uint8)
             scipy.misc.imsave(filepath, overlay255)
+
+            heat_map = self._heatmap_overlay(score_map, img_orig)
+            filepath = os.path.join(self.root, "heatmap", img_name + '.png')
+            heat_map = np.round(heat_map * 255.).astype(np.uint8)
+            scipy.misc.imsave(filepath, heat_map)
 
 class MergeMultiScale(ResultWriter):
 
