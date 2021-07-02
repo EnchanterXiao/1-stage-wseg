@@ -47,8 +47,9 @@ if __name__ == '__main__':
 
     # loading the model
     args = get_arguments(sys.argv[1:])
-    prospect_thresh = 0.5
+    prospect_thresh = 0.7
     background_thresh = 0.0
+    heatmap=False
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -91,7 +92,9 @@ if __name__ == '__main__':
 
     palette = dataset.get_palette()
     pool = mp.Pool(processes=args.workers)
-    writer = WriterClass(cfg.TEST, palette, args.mask_output_dir, prospect_thresh=prospect_thresh, background_thresh=background_thresh)
+    writer = WriterClass(cfg.TEST, palette, args.mask_output_dir,
+                         prospect_thresh=prospect_thresh, background_thresh=background_thresh,
+                         heatmap=heatmap)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 

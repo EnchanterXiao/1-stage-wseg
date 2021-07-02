@@ -13,11 +13,12 @@ from datasets.pascal_voc_ms import MultiscaleLoader, CropLoader
 
 class ResultWriter:
     
-    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True):
+    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True, heatmap=True):
         self.cfg = cfg
         self.palette = palette
         self.root = out_path
         self.verbose = verbose
+        self.heatmap = heatmap
         self.prospect_thresh = prospect_thresh
         self.background_thresh = background_thresh
 
@@ -96,7 +97,9 @@ class ResultWriter:
             overlay255 = np.round(overlay * 255.).astype(np.uint8)
             scipy.misc.imsave(filepath, overlay255)
 
-            heat_map = self._heatmap_overlay(score_map, img_orig)
+        if self.heatmap:
+            image = np.transpose(img_orig, [1,2,0])
+            heat_map = self._heatmap_overlay(score_map, image)
             filepath = os.path.join(self.root, "heatmap", img_name + '.png')
             heat_map = np.round(heat_map * 255.).astype(np.uint8)
             scipy.misc.imsave(filepath, heat_map)

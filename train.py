@@ -92,14 +92,14 @@ class DecTrainer(BaseTrainer):
 
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
-        loss_at = torch.mean(loss_at, dim=0)
+        loss_at = torch.mean(loss_at, dim=0) * 0
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
                   "loss_fg": cls_fg.mean().item(),
                   "loss_at": loss_at.item()}
 
-        loss = loss_cls.clone() + loss_at.clone()*50
+        loss = loss_cls.clone() + loss_at.clone()
         if "dec" in masks:
             loss_mask = loss_mask.mean()
 
