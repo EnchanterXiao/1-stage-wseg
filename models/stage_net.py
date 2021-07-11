@@ -585,7 +585,8 @@ def network_factory(cfg):
 
             self.cfg = config
 
-            self.fc8 = nn.Conv2d(self.fan_out(), num_classes - 1, 1, bias=False)
+            # self.fc8 = nn.Conv2d(self.fan_out(), num_classes - 1, 1, bias=False)
+            self.fc8 = nn.Conv2d(256, num_classes - 1, 1, bias=False)
             nn.init.xavier_uniform_(self.fc8.weight)
 
             cls_modules = [nn.AdaptiveAvgPool2d((1, 1)), self.fc8, Flatten()]
