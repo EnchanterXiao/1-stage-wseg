@@ -18,9 +18,9 @@ except ImportError:
 
 def args():
     parser = argparse.ArgumentParser(description="Convert SBD .mat to .png")
-    parser.add_argument("--inp", type=str, default='./dataset/cls/',
+    parser.add_argument("--inp", type=str, default='../data/sbd/benchmark_RELEASE/dataset/cls/',
                         help="Directory with .mat files")
-    parser.add_argument("--out", type=str, default='./dataset/cls_png/',
+    parser.add_argument("--out", type=str, default='../data/sbd/benchmark_RELEASE/dataset/cls_png/',
                         help="Directory where to save .png files")
     return parser.parse_args(sys.argv[1:])
 
