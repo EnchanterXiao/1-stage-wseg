@@ -736,7 +736,7 @@ def network_factory(cfg):
             x = self.forward_backbone(y)
             Channel_attention = self.caatention(x)
 
-            x = torch.multiply(x, Channel_attention)
+            x = torch.mul(x, Channel_attention)
             Spatial_weight, attention_map = self.attention(x)
 
             x = torch.mul(x, Spatial_weight)
