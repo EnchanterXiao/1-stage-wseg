@@ -41,8 +41,11 @@ class SpatialAttention(nn.Module):
         return Spatial_weight, attention_map
 
 if __name__ == '__main__':
+    CA = ChannelAttention(256)
     SA = SpatialAttention()
-    input = torch.rand([8, 3, 32, 32])
+    input = torch.rand([8, 256, 32, 32])
     output1,output2 = SA(input)
+    ouput3 = CA(input)
     print(output1)
     print(output2)
+    print(ouput3.shape)
