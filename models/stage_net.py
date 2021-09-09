@@ -691,7 +691,7 @@ def network_factory(cfg):
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
-            self.caatention = ChannelAttention(in_planes=256)
+            self.caatention = ChannelAttention(in_planes=4096)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
             self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
