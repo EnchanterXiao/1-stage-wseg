@@ -104,7 +104,7 @@ class DecTrainer(BaseTrainer):
         # attention loss
         if loss_at != None:
             loss_at = torch.mean(loss_at, dim=0) * weight_attention
-            losses.update("loss_at", loss_at.item())
+            losses.update({"loss_at": loss_at.item()})
             loss += loss_at.clone()
 
         if "dec" in masks:
