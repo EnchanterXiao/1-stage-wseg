@@ -102,13 +102,14 @@ class PascalVOC(Dataset):
 
 class VOCSegmentation(PascalVOC):
 
-    def __init__(self, cfg, split, test_mode, root=os.path.expanduser('./data')):
+    def __init__(self, cfg, split, test_mode, root=os.path.expanduser('./data'), scoremap_path=False):
         super(VOCSegmentation, self).__init__()
 
         self.cfg = cfg
         self.root = root
         self.split = split
         self.test_mode = test_mode
+        self.scoremap = False
 
         # train/val/test splits are pre-cut
         # if self.split == 'train':
@@ -128,6 +129,9 @@ class VOCSegmentation(PascalVOC):
         self.images = []
         self.masks = []
         self.scores = []
+        if scoremap_path:
+            self.scoremap = True
+
         with open(_split_f, "r") as lines:
             for line in lines:
                 _image, _mask = line.strip("\n").split(' ')
@@ -139,6 +143,10 @@ class VOCSegmentation(PascalVOC):
                     _mask = os.path.join(self.root, _mask.lstrip('/'))
                     assert os.path.isfile(_mask), '%s not found' % _mask
                     self.masks.append(_mask)
+
+                if self.scoremap:
+                    _score = os.path.join(scoremap_path, os.path.basename(_image).split('.')[0]+'.npy')
+                    self.scores.append(_score)
 
         if self.split != 'test':
             assert (len(self.images) == len(self.masks))
@@ -162,6 +170,10 @@ class VOCSegmentation(PascalVOC):
 
         image = Image.open(self.images[index]).convert('RGB')
         mask = Image.open(self.masks[index])
+        if self.scoremap:
+            score = np.load(self.scores[index])
+        else:
+            score = None
 
         unique_labels = np.unique(mask)
 
@@ -179,9 +191,9 @@ class VOCSegmentation(PascalVOC):
         labels[unique_labels.tolist()] = 1
 
         # general resize, normalize and toTensor
-        image, mask = self.transform(image, mask)
+        image, mask, score = self.transform(image, mask, score)
 
-        return image, labels, os.path.basename(self.images[index]), mask
+        return image, labels, os.path.basename(self.images[index]), mask, score
 
     @property
     def pred_offset(self):

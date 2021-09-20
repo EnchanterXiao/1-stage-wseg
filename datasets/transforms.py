@@ -35,27 +35,31 @@ class MaskRandResizedCrop:
                                         self.rnd_crop.scale, \
                                         self.rnd_crop.ratio)
 
-    def __call__(self, image, labels):
+    def __call__(self, image, labels, scores):
 
         i, j, h, w = self.get_params(image)
 
         image = F.resized_crop(image, i, j, h, w, self.rnd_crop.size, Image.CUBIC)
         labels = F.resized_crop(labels, i, j, h, w, self.rnd_crop.size, Image.NEAREST)
+        if scores!=None:
+            scores = F.resized_crop(scores, i, j, h, w, self.rnd_crop.size, Image.BILINEAR)
 
-        return image, labels
+        return image, labels, scores
 
 class MaskHFlip:
 
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, image, mask):
+    def __call__(self, image, mask, score):
 
         if random.random() < self.p:
             image = F.hflip(image)
             mask = F.hflip(mask)
+            if score != None:
+                score = F.hflip(score)
 
-        return image, mask
+        return image, mask, score
 
 class MaskNormalise:
 
@@ -65,13 +69,13 @@ class MaskNormalise:
     def __toByteTensor(self, pic):
         return torch.from_numpy(np.array(pic, np.int32, copy=False))
 
-    def __call__(self, image, labels):
+    def __call__(self, image, labels, score):
 
         image = F.to_tensor(image)
         image = self.norm(image)
         labels = self.__toByteTensor(labels)
 
-        return image, labels
+        return image, labels, score
 
 class MaskToTensor:
 
@@ -91,19 +95,19 @@ class MaskColourJitter:
                                      saturation=0.3, \
                                      hue=0.1)
 
-    def __call__(self, image, mask):
+    def __call__(self, image, mask, score):
 
         if random.random() < self.p:
             image = self.jitter(image)
 
-        return image, mask
+        return image, mask, score
 
 class RandomGaussianBlur(object):
-    def __call__(self, image, labels):
+    def __call__(self, image, labels, score):
         img = image
         mask = labels
         if random.random() < 0.5:
             img = img.filter(ImageFilter.GaussianBlur(
                 radius=random.random()))
 
-        return img, mask
+        return img, mask, score

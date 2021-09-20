@@ -6,6 +6,7 @@ DATASET:
   ROOT: "../1sw/data"
   NAME: 'sbd'
   FILENAME: "train_augvoc.txt"
+  SCOREMAP: False
 TRAIN:
   BATCH_SIZE: 16
   NUM_EPOCHS: 50

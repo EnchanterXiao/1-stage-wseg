@@ -43,6 +43,9 @@ def check_dir(base_path, name):
 def HWC_to_CHW(img):
     return np.transpose(img, (2, 0, 1))
 
+def save_scoremap(path, name, scoremap):
+    np.save(os.path.join(path, name+'.npy'), scoremap)
+
 if __name__ == '__main__':
 
 
@@ -51,6 +54,7 @@ if __name__ == '__main__':
     prospect_thresh = 0.0
     background_thresh = 0.0
     heatmap=False
+    scoremap = False
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -121,6 +125,10 @@ if __name__ == '__main__':
 
         # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
         pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+
+        #save score map
+        if scoremap:
+            save_scoremap(args.mask_output_dir, os.path.basename(img_name[0]).split('.')[0], None)
 
         timer.update_progress(float(iter + 1) / N)
         if iter % 100 == 0:
