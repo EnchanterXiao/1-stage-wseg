@@ -16,13 +16,13 @@ def add_global_arguments(parser):
     parser.add_argument("--run", type=str, help="ID of the run")
     parser.add_argument('--workers', type=int, default=8,
                         metavar='N', help='dataloader threads')
-    parser.add_argument("--snapshot-dir", type=str, default='./snapshots',
+    parser.add_argument("--snapshot-dir", type=str, default='../1sw/snapshots',
                         help="Where to save snapshots of the model.")
-    parser.add_argument("--logdir", type=str, default='./logs',
+    parser.add_argument("--logdir", type=str, default='../1sw/logs',
                         help="Where to save log files of the model.")
 
     # used at inference only
-    parser.add_argument("--infer-list", type=str, default='data/val_augvoc.txt',
+    parser.add_argument("--infer-list", type=str, default='../1sw/data/val_augvoc.txt',
                         help="Path to a file list")
     parser.add_argument("--mask-output-dir", type=str, default='results/',
                         help="Path where to save masks")

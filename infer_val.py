@@ -45,9 +45,10 @@ def HWC_to_CHW(img):
 
 if __name__ == '__main__':
 
+
     # loading the model
     args = get_arguments(sys.argv[1:])
-    prospect_thresh = 0.7
+    prospect_thresh = 0.0
     background_thresh = 0.0
     heatmap=False
 

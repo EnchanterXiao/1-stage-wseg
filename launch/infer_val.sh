@@ -9,10 +9,10 @@ FILELIST=data/val_voc.txt
 
 ## You values here (see below how they're used)
 #
-OUTPUT_DIR=./output
-EXP=v0513
+OUTPUT_DIR=../1sw/output
+EXP=v0917
 RUN_ID=ae
-SNAPSHOT=e011Xs0.900
+SNAPSHOT=e017Xs0.898
 EXTRA_ARGS=
 SAVE_ID=ae
 #

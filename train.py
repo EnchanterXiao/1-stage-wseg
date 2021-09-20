@@ -30,6 +30,8 @@ from utils.metrics import compute_jaccard
 torch.backends.cudnn.benchmark = True
 # torch.backends.cudnn.deterministic = True
 DEBUG = False
+global weight_attention
+weight_attention = 20
 
 
 def rescale_as(x, y, mode="bilinear", align_corners=True):
@@ -90,16 +92,21 @@ class DecTrainer(BaseTrainer):
         # classification
         cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask, loss_at = self.enc(image, image_raw, gt_labels)
 
+
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
-        loss_at = torch.mean(loss_at, dim=0) * 0
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
-                  "loss_fg": cls_fg.mean().item(),
-                  "loss_at": loss_at.item()}
+                  "loss_fg": cls_fg.mean().item()}
+        loss = loss_cls.clone()
 
-        loss = loss_cls.clone() + loss_at.clone()
+        # attention loss
+        if loss_at != None:
+            loss_at = torch.mean(loss_at, dim=0) * weight_attention
+            losses.update({"loss_at": loss_at.item()})
+            loss += loss_at.clone()
+
         if "dec" in masks:
             loss_mask = loss_mask.mean()
 
