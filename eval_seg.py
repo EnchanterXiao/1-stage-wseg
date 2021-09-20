@@ -40,6 +40,7 @@ parser.add_argument("--oracle-from", type=str, default="",
 parser.add_argument("--log-scores", type=str, default='./scores.log',
                     help="Logging scores for invididual images")
 
+
 def check_args(args):
     """Check the files/directories exist"""
 
@@ -57,6 +58,7 @@ def check_args(args):
         assert os.path.isdir(args.masks), \
             "Directory {} does not exist".format(args.masks)
 
+
 def format_num(x):
     return round(x*100., 1)
 
@@ -68,6 +70,7 @@ def get_stats(M, i):
     FP = np.sum(M[:, i]) - TP # false positives
 
     return TP, FN, FP
+
 
 def summarise_one(class_stats, M, name, labels):
 
@@ -82,6 +85,7 @@ def summarise_one(class_stats, M, name, labels):
         score = TP - FN - FP
 
         class_stats[i].append((name, score))
+
 
 def summarise_per_class(class_stats, filename):
     
@@ -99,6 +103,7 @@ def summarise_per_class(class_stats, filename):
 
     with open(filename, 'w') as f:
         f.write(data)
+
 
 def summarise_stats(M):
 
@@ -177,8 +182,10 @@ def evaluate_one(conf_mat, mask_gt, mask):
 
     return conf_mat_one
 
+
 def read_mask_file(filepath):
     return np.array(Image.open(filepath))
+
 
 def oracle_lower(mask, h, w, alpha):
 
@@ -199,10 +206,12 @@ def oracle_lower(mask, h, w, alpha):
 
     return new_mask
 
+
 def get_image_name(name):
     base = os.path.basename(name)
     base = base.replace(".jpg", "")
     return base
+
 
 def evaluate_all(args):
 
