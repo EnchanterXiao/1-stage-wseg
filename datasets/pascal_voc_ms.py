@@ -20,8 +20,10 @@ def load_img_name_list(dataset_path, index = 0):
 
     return img_name_list
 
+
 def load_label_name_list(dataset_path):
     return load_img_name_list(dataset_path, index = 1)
+
 
 class VOC12ImageDataset(PascalVOC):
 
@@ -39,6 +41,7 @@ class VOC12ImageDataset(PascalVOC):
         fullpath = os.path.join(self.voc12_root, self.img_name_list[idx])
         img = Image.open(fullpath).convert("RGB")
         return fullpath, img
+
 
 class VOC12ClsDataset(VOC12ImageDataset):
 
@@ -90,7 +93,7 @@ class VOC12ClsDataset(VOC12ImageDataset):
         if unique_labels[0] == self.CLASS_IDX['background']:
             unique_labels = unique_labels[1:]
 
-        assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
+        assert unique_labels.size > 0, 'No labels found in %s' % self.masks[idx]
         unique_labels -= 1 # shifting since no BG class
         labels[unique_labels.tolist()] = 1
         

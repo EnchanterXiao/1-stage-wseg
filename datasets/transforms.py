@@ -2,7 +2,7 @@ import random
 import torch
 import numpy as np
 
-from PIL import Image
+from PIL import Image, ImageOps, ImageFilter
 import torchvision.transforms as tf
 import torchvision.transforms.functional as F
 
@@ -97,3 +97,13 @@ class MaskColourJitter:
             image = self.jitter(image)
 
         return image, mask
+
+class RandomGaussianBlur(object):
+    def __call__(self, image, labels):
+        img = image
+        mask = labels
+        if random.random() < 0.5:
+            img = img.filter(ImageFilter.GaussianBlur(
+                radius=random.random()))
+
+        return img, mask

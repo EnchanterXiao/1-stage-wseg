@@ -24,12 +24,13 @@ cudnn.deterministic = True
 
 from opts import get_arguments
 from core.config import cfg, cfg_from_file, cfg_from_list
-from models import get_model
+from models.deeplabV3 import DeepLab
 
 from utils.checkpoints import Checkpoint
 from utils.timer import Timer
 from utils.dcrf import crf_inference
 from utils.inference_tools import get_inference_io
+from datasets import get_dataloader, get_num_classes, get_class_names
 
 def check_dir(base_path, name):
 
@@ -48,9 +49,6 @@ if __name__ == '__main__':
 
     # loading the model
     args = get_arguments(sys.argv[1:])
-    prospect_thresh = 0.0
-    background_thresh = 0.0
-    heatmap=False
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -61,11 +59,14 @@ if __name__ == '__main__':
     check_dir(args.mask_output_dir, "vis")
     check_dir(args.mask_output_dir, "crf")
     check_dir(args.mask_output_dir, "no_crf")
-    check_dir(args.mask_output_dir, "heatmap")
-    check_dir(args.mask_output_dir, "scoremap")
 
     # Loading the model
-    model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
+    nclass = get_num_classes(args)
+    model = DeepLab(num_classes=nclass,
+                        backbone=args.backbone,
+                        output_stride=args.out_stride,
+                        sync_bn=args.sync_bn,
+                        freeze_bn=args.freeze_bn)
     checkpoint = Checkpoint(args.snapshot_dir, max_n=5)
     checkpoint.add_model('enc', model)
     checkpoint.load(args.resume)
@@ -94,8 +95,8 @@ if __name__ == '__main__':
     palette = dataset.get_palette()
     pool = mp.Pool(processes=args.workers)
     writer = WriterClass(cfg.TEST, palette, args.mask_output_dir,
-                         prospect_thresh=prospect_thresh, background_thresh=background_thresh,
-                         heatmap=heatmap)
+                         prospect_thresh=0, background_thresh=0,
+                         heatmap=False)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
@@ -103,16 +104,7 @@ if __name__ == '__main__':
         masks = []
 
         with torch.no_grad():
-            cls_raw, masks_pred = model(images_in)
-
-            if not cfg.TEST.USE_GT_LABELS:
-                cls_sigmoid = torch.sigmoid(cls_raw)
-                cls_sigmoid, _ = cls_sigmoid.max(0)
-                #cls_sigmoid = cls_sigmoid.mean(0)
-                # threshold class scores
-                labels = (cls_sigmoid > cfg.TEST.FP_CUT_SCORE)
-            else:
-                labels = labels[0]
+            masks_pred = model(images_in)
 
         # saving the raw npy
         image = dataset.denorm(img_orig[0]).numpy()

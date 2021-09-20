@@ -111,21 +111,23 @@ class VOCSegmentation(PascalVOC):
         self.test_mode = test_mode
 
         # train/val/test splits are pre-cut
-        if self.split == 'train':
-            _split_f = os.path.join(self.root, 'train_augvoc.txt')
-        elif self.split == 'train_voc':
-            _split_f = os.path.join(self.root, 'train_voc.txt')
-        elif self.split == 'val':
-            _split_f = os.path.join(self.root, 'val_voc.txt')
-        elif self.split == 'test':
-            _split_f = os.path.join(self.root, 'test.txt')
-        else:
-            raise RuntimeError('Unknown dataset split.')
+        # if self.split == 'train':
+        #     _split_f = os.path.join(self.root, 'train_augvoc.txt')
+        # elif self.split == 'train_voc':
+        #     _split_f = os.path.join(self.root, 'train_voc.txt')
+        # elif self.split == 'val':
+        #     _split_f = os.path.join(self.root, 'val_voc.txt')
+        # elif self.split == 'test':
+        #     _split_f = os.path.join(self.root, 'test.txt')
+        # else:
+        #     raise RuntimeError('Unknown dataset split.')
+        _split_f = os.path.join(self.root, split+'.txt')
 
         assert os.path.isfile(_split_f), "%s not found" % _split_f
 
         self.images = []
         self.masks = []
+        self.scores = []
         with open(_split_f, "r") as lines:
             for line in lines:
                 _image, _mask = line.strip("\n").split(' ')
@@ -147,6 +149,7 @@ class VOCSegmentation(PascalVOC):
 
         self.transform = tf.Compose([tf.MaskRandResizedCrop(self.cfg.DATASET), \
                                      tf.MaskHFlip(), \
+                                     tf.RandomGaussianBlur(),\
                                      tf.MaskColourJitter(p = 1.0), \
                                      tf.MaskNormalise(self.MEAN, self.STD), \
                                      # tf.MaskToTensor()
@@ -158,7 +161,7 @@ class VOCSegmentation(PascalVOC):
     def __getitem__(self, index):
 
         image = Image.open(self.images[index]).convert('RGB')
-        mask  = Image.open(self.masks[index])
+        mask = Image.open(self.masks[index])
 
         unique_labels = np.unique(mask)
 
@@ -170,7 +173,7 @@ class VOCSegmentation(PascalVOC):
         labels = torch.zeros(self.NUM_CLASS - 1)
         if unique_labels[0] == self.CLASS_IDX['background']:
             unique_labels = unique_labels[1:]
-        unique_labels -= 1 # shifting since no BG class
+        unique_labels -= 1  # shifting since no BG class
 
         assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
         labels[unique_labels.tolist()] = 1

@@ -46,9 +46,8 @@ class DecTrainer(BaseTrainer):
         super(DecTrainer, self).__init__(args, **kwargs)
 
         # dataloader
-        self.trainloader = get_dataloader(args, cfg, 'train')
-        self.trainloader_val = get_dataloader(args, cfg, 'train_voc')
-        self.valloader = get_dataloader(args, cfg, 'val')
+        self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME)
+        self.valloader = get_dataloader(args, cfg, 'val_voc')
         self.denorm = self.trainloader.dataset.denorm
 
         self.nclass = get_num_classes(args)
@@ -209,7 +208,6 @@ class DecTrainer(BaseTrainer):
     def _init_norm(self):
         self.trainloader.dataset.set_norm(self.enc.normalize)
         self.valloader.dataset.set_norm(self.enc.normalize)
-        self.trainloader_val.dataset.set_norm(self.enc.normalize)
 
     def _apply_cmap(self, mask_idx, mask_conf):
         palette = self.trainloader.dataset.get_palette()

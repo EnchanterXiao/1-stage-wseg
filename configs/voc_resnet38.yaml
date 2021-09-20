@@ -3,6 +3,9 @@ DATASET:
   CROP_SIZE: 321
   SCALE_FROM: 0.9
   SCALE_TO: 1.0
+  ROOT: "../1sw/data"
+  NAME: 'sbd'
+  FILENAME: "train_augvoc.txt"
 TRAIN:
   BATCH_SIZE: 8
   NUM_EPOCHS: 30

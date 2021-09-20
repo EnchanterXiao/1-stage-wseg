@@ -16,7 +16,7 @@ def get_dataloader(args, cfg, split, batch_size=None, test_mode=None):
 
     dataset_name = args.dataset.lower()
     dataset_cls = datasets[dataset_name]
-    dataset = dataset_cls(cfg, split, test_mode, root=cfg.TEST.DATA_ROOT)
+    dataset = dataset_cls(cfg, split, test_mode, root=cfg.DATASET.ROOT)
 
     kwargs = {'num_workers': args.workers, 'pin_memory': True}
     shuffle, drop_last = [True, True] if split == 'train' else [False, False]
