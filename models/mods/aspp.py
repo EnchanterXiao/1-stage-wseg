@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sync_batchnorm.batchnorm import SynchronizedBatchNorm2d
 
 class _ASPPModule(nn.Module):
     def __init__(self, inplanes, planes, kernel_size, padding, dilation, BatchNorm):
@@ -11,11 +12,24 @@ class _ASPPModule(nn.Module):
         self.bn = BatchNorm(planes)
         self.relu = nn.ReLU()
 
+        self._init_weight()
+
     def forward(self, x):
         x = self.atrous_conv(x)
         x = self.bn(x)
 
         return self.relu(x)
+
+    def _init_weight(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                torch.nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, SynchronizedBatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
+            elif isinstance(m, nn.BatchNorm2d):
+                m.weight.data.fill_(1)
+                m.bias.data.zero_()
 
 class ASPP(nn.Module):
     def __init__(self, inplanes, output_stride, BatchNorm):
