@@ -189,11 +189,18 @@ class VOCSegmentation(PascalVOC):
             unique_labels = unique_labels[1:]
         unique_labels -= 1  # shifting since no BG class
 
-        assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
+        # assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
+        while(unique_labels.size > 0 and unique_labels[-1] >= self.NUM_CLASS - 1):
+            unique_labels = unique_labels[:-1]
         labels[unique_labels.tolist()] = 1
 
         # general resize, normalize and toTensor
+        # print(mask.size)
         image, mask, score = self.transform(image, mask, score)
+        if len(mask.size())>=3:
+            mask = mask[:, :, 0]
+        if len(score.size())>=3:
+            score = score[:, :, 0]
         a = torch.zeros_like(mask)
         mask = torch.where(mask <= 20, mask, a)
 

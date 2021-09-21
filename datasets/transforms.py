@@ -72,7 +72,13 @@ class MaskNormalise:
         image = F.to_tensor(image)
         image = self.norm(image)
         labels = self.__toByteTensor(labels)
+        # print('Norm:', np.array(score).shape)
+        # print(np.all(np.array(score)[:, :, 0] == np.array(score)[:, :, 1]))
+        # print(np.all(np.array(score)[:, :, 0] == np.array(score)[:, :, 2]))
         score = torch.from_numpy(np.array(score))
+        # print('Norm:', labels.size())
+        # print('Norm:', score.size())
+
 
         return image, labels, score
 
@@ -98,7 +104,6 @@ class MaskColourJitter:
 
         if random.random() < self.p:
             image = self.jitter(image)
-
         return image, mask, score
 
 class RandomGaussianBlur(object):
@@ -108,5 +113,4 @@ class RandomGaussianBlur(object):
         if random.random() < 0.5:
             img = img.filter(ImageFilter.GaussianBlur(
                 radius=random.random()))
-
         return img, mask, score
