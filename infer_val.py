@@ -44,9 +44,9 @@ def HWC_to_CHW(img):
     return np.transpose(img, (2, 0, 1))
 
 if __name__ == '__main__':
-    prospect_threshs = [0.0, 0.3, 0.5, 0.7]
+    prospect_threshs = [0.1, 0.3, 0.5, 0.7]
     heatmaps = [True, False, False, False, False]
-    scoremaps = [True, False, False, False, False]
+    scoremaps = [True, True, True, True, True]
 
     # loading the model
     args = get_arguments(sys.argv[1:])

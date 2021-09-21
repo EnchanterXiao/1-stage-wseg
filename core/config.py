@@ -68,6 +68,9 @@ __C.DATASET.CROP_SIZE = 321
 __C.DATASET.SCALE_FROM = 0.9
 __C.DATASET.SCALE_TO = 1.0
 __C.DATASET.PATH = "data/images"
+__C.DATASET.ROOT = ''
+__C.DATASET.NAME = ''
+__C.DATASET.FILENAME = ''
 
 # ---------------------------------------------------------------------------- #
 # Network options
