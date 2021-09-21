@@ -83,6 +83,8 @@ def get_arguments(args_in):
 def get_deeplabarguments(args_in):
     parser = argparse.ArgumentParser(description="Model Evaluation")
     add_global_arguments(parser)
+    parser.add_argument('--scoremap_path', type=str, default='',
+                        help='backbone name (default: resnet)')
     parser.add_argument('--backbone', type=str, default='resnet',
                         choices=['resnet', 'xception', 'drn', 'mobilenet'],
                         help='backbone name (default: resnet)')
@@ -92,8 +94,8 @@ def get_deeplabarguments(args_in):
                         help='whether to use sync bn (default: auto)')
     parser.add_argument('--freeze-bn', type=bool, default=False,
                         help='whether to freeze bn parameters (default: False)')
-    parser.add_argument('--workers', type=int, default=4,
-                        metavar='N', help='dataloader threads')
+    # parser.add_argument('--workers', type=int, default=4,
+    #                     metavar='N', help='dataloader threads')
     parser.add_argument('--base-size', type=int, default=513,
                         help='base image size')
     parser.add_argument('--crop-size', type=int, default=513,
@@ -135,3 +137,4 @@ def get_deeplabarguments(args_in):
 
     args = parser.parse_args(args_in)
     check_global_arguments(args)
+    return args

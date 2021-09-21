@@ -19,6 +19,7 @@ from opts import get_arguments, get_deeplabarguments
 from core.config import cfg, cfg_from_file, cfg_from_list
 from datasets.utils import Colorize
 from losses import get_criterion, mask_loss_ce, SegmentationLosses
+import tqdm
 
 from utils.timer import Timer
 from utils.stat_manager import StatManager
@@ -42,7 +43,7 @@ class DecTrainer(BaseTrainer):
         super(DecTrainer, self).__init__(args, **kwargs)
 
         # dataloader
-        self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME, cfg.DATASET.SCOREMAP)
+        self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME, scoremap_path=args.scoremap_path)
         self.valloader = get_dataloader(args, cfg, 'val_voc')
         self.denorm = self.trainloader.dataset.denorm
 
@@ -94,15 +95,15 @@ class DecTrainer(BaseTrainer):
 
         # using cuda
         self.enc = nn.DataParallel(self.enc).cuda()
-        self.criterion_cls = nn.DataParallel(self.criterion).cuda()
+        # self.criterion = nn.DataParallel(self.criterion).cuda()
 
     def step(self, image, gt_labels, train=False):
 
         # denorm image
         image_raw = self.denorm(image.clone())
-        cls_labels = gt_labels[0]
-        mask_label = gt_labels[1]
-        score_label = gt_labels[2]
+        cls_labels = gt_labels[0].cuda()
+        mask_label = gt_labels[1].cuda()
+        score_label = gt_labels[2].cuda()
 
         output = self.enc(image_raw)
 
@@ -137,9 +138,9 @@ class DecTrainer(BaseTrainer):
 
         # adding stats for classes
         timer = Timer("New Epoch: ")
-        train_step = partial(self.step, train=True, visualise=False)
+        train_step = partial(self.step, train=True)
 
-        for i, (image, gt_labels, _, gt_masks) in enumerate(self.trainloader):
+        for i, (image, gt_labels, _, gt_masks, _) in enumerate(self.trainloader):
 
             # masks
             losses, _, _ = train_step(image, [gt_labels, gt_masks, _])
@@ -184,12 +185,12 @@ class DecTrainer(BaseTrainer):
         def eval_batch(image, gt_labels):
 
             losses, masks, mask_logits = \
-                self.step(image, gt_labels, train=False, visualise=False)
+                self.step(image, gt_labels, train=False)
 
             for loss_key, loss_val in losses.items():
                 stat.update_stats(loss_key, loss_val)
 
-            return masks, mask_logits.cpu()
+            return losses, masks, mask_logits.cpu()
 
         self.enc.eval()
 
@@ -201,10 +202,12 @@ class DecTrainer(BaseTrainer):
         # count of the images
         num_im = 0
 
-        for n, (image, gt_labels, _, gt_masks) in enumerate(loader):
+        for n, (image, gt_labels, _, gt_masks, _) in tqdm.tqdm(enumerate(loader)):
             with torch.no_grad():
                 losses, masks_all, mask_logits = eval_batch(image, [gt_labels, gt_masks, _])
-
+                # print(gt_masks.size())
+                # print(mask_logits.size())
+                mask_logits = torch.argmax(mask_logits, dim=1)
                 evaluate_one(conf_mat, gt_masks, mask_logits)
                 num_im += 1
 
@@ -252,9 +255,10 @@ def evaluate_one(conf_mat, mask_gt, mask):
 
     assert(len(gt) == len(pred))
 
-    for i in range(len(gt)):
-        if gt[i] < conf_mat.shape[0]:
-            conf_mat[gt[i], pred[i]] += 1.0
+    # for i in range(len(gt)):
+    #     if gt[i] < conf_mat.shape[0]:
+    #         conf_mat[gt[i], pred[i]] += 1.0
+    conf_mat[gt, pred] += 1.0
     return
 
 
@@ -291,7 +295,7 @@ def summarise_stats(M):
     print_row(head_fmt, ("Class", "#", "IoU", "Pr", "Re"))
     print(split)
 
-    for cat in PascalVOC.CLASSES:
+    for cat in PascalVOC.CLASSES[:-1]:
 
         i = PascalVOC.CLASS_IDX[cat]
 
@@ -355,8 +359,10 @@ if __name__ == "__main__":
         with torch.no_grad():
             if epoch == 0:
                 time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=False)
+                          checkpoint=True)
             else:
                 time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
                           checkpoint=True)
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
+        time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                  checkpoint=True)

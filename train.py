@@ -147,7 +147,7 @@ class DecTrainer(BaseTrainer):
         timer = Timer("New Epoch: ")
         train_step = partial(self.step, train=True, visualise=False)
 
-        for i, (image, gt_labels, _, gt_masks) in enumerate(self.trainloader):
+        for i, (image, gt_labels, _, gt_masks, _) in enumerate(self.trainloader):
 
             # masks
             losses, _, _, _ = train_step(epoch, image, gt_labels)
@@ -249,7 +249,7 @@ class DecTrainer(BaseTrainer):
             means.append(x.mean())
             stds.append(x.std())
 
-        for n, (image, gt_labels, _, gt_masks) in enumerate(loader):
+        for n, (image, gt_labels, _, gt_masks, _) in enumerate(loader):
             with torch.no_grad():
                 cls_raw, masks_all, mask_logits = eval_batch(image, gt_labels)
 

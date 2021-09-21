@@ -102,7 +102,7 @@ class PascalVOC(Dataset):
 
 class VOCSegmentation(PascalVOC):
 
-    def __init__(self, cfg, split, test_mode, root=os.path.expanduser('./data'), scoremap_path=False):
+    def __init__(self, cfg, split, test_mode, root=os.path.expanduser('./data'), scoremap_path=''):
         super(VOCSegmentation, self).__init__()
 
         self.cfg = cfg
@@ -129,7 +129,7 @@ class VOCSegmentation(PascalVOC):
         self.images = []
         self.masks = []
         self.scores = []
-        if scoremap_path:
+        if len(scoremap_path)>0:
             self.scoremap = True
 
         with open(_split_f, "r") as lines:
@@ -155,11 +155,12 @@ class VOCSegmentation(PascalVOC):
             elif self.split == 'val':
                 assert len(self.images) == 1449
 
-        self.transform = tf.Compose([tf.MaskRandResizedCrop(self.cfg.DATASET), \
-                                     tf.MaskHFlip(), \
-                                     tf.RandomGaussianBlur(),\
-                                     tf.MaskColourJitter(p = 1.0), \
-                                     tf.MaskNormalise(self.MEAN, self.STD), \
+        self.transform = tf.Compose([
+                                     tf.MaskRandResizedCrop(self.cfg.DATASET),
+                                     tf.MaskHFlip(),
+                                     tf.RandomGaussianBlur(),
+                                     tf.MaskColourJitter(p=1.0),
+                                     tf.MaskNormalise(self.MEAN, self.STD),
                                      # tf.MaskToTensor()
                                      ])
 
@@ -173,8 +174,8 @@ class VOCSegmentation(PascalVOC):
         if self.scoremap:
             score = np.load(self.scores[index])
         else:
-            score = None
-
+            score = np.zeros_like(mask)
+        score = Image.fromarray(score)
         unique_labels = np.unique(mask)
 
         # ambigious
@@ -192,6 +193,8 @@ class VOCSegmentation(PascalVOC):
 
         # general resize, normalize and toTensor
         image, mask, score = self.transform(image, mask, score)
+        a = torch.zeros_like(mask)
+        mask = torch.where(mask <= 20, mask, a)
 
         return image, labels, os.path.basename(self.images[index]), mask, score
 

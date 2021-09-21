@@ -92,6 +92,7 @@ class ResultWriter:
 
 
         filepath = os.path.join(self.root, "no_crf", img_name + '.png')
+        # print('save', filepath)
         scipy.misc.imsave(filepath, pred.astype(np.uint8))
 
         if self.CRF:
@@ -146,7 +147,9 @@ class MergeMultiScale(ResultWriter):
                 mask_cut = torch.flip(mask_cut, (-1, ))
 
             # getting the max response
+            # print(mask_cut.size())
             mask_cut[1:, ::] *= labels[:, None, None]
+            # mask_cut[1:, ::] = torch.m(mask_cut[1:, ::], labels[:, ::])
             mask_list.append(mask_cut)
 
         mean_mask = sum(mask_list).numpy() / len(mask_list)

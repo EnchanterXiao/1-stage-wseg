@@ -12,16 +12,16 @@ class Compose:
     def __init__(self, segtransform):
         self.segtransform = segtransform
 
-    def __call__(self, image, label):
+    def __call__(self, image, label, score):
         # allow for intermediate representations
-        result = (image, label)
+        result = (image, label, score)
         for t in self.segtransform:
             result = t(*result)
 
         # ensure we have just the image
         # and the label in the end
-        image, label = result
-        return image, label
+        image, label, score = result
+        return image, label, score
 
 class MaskRandResizedCrop:
 
@@ -41,8 +41,7 @@ class MaskRandResizedCrop:
 
         image = F.resized_crop(image, i, j, h, w, self.rnd_crop.size, Image.CUBIC)
         labels = F.resized_crop(labels, i, j, h, w, self.rnd_crop.size, Image.NEAREST)
-        if scores!=None:
-            scores = F.resized_crop(scores, i, j, h, w, self.rnd_crop.size, Image.BILINEAR)
+        scores = F.resized_crop(scores, i, j, h, w, self.rnd_crop.size, Image.BILINEAR)
 
         return image, labels, scores
 
@@ -56,8 +55,7 @@ class MaskHFlip:
         if random.random() < self.p:
             image = F.hflip(image)
             mask = F.hflip(mask)
-            if score != None:
-                score = F.hflip(score)
+            score = F.hflip(score)
 
         return image, mask, score
 
@@ -74,6 +72,7 @@ class MaskNormalise:
         image = F.to_tensor(image)
         image = self.norm(image)
         labels = self.__toByteTensor(labels)
+        score = torch.from_numpy(np.array(score))
 
         return image, labels, score
 

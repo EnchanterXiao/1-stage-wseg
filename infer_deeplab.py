@@ -22,7 +22,7 @@ cudnn.enabled = True
 cudnn.benchmark = False
 cudnn.deterministic = True
 
-from opts import get_arguments
+from opts import get_arguments, get_deeplabarguments
 from core.config import cfg, cfg_from_file, cfg_from_list
 from models.deeplabV3 import DeepLab
 
@@ -44,11 +44,39 @@ def check_dir(base_path, name):
 def HWC_to_CHW(img):
     return np.transpose(img, (2, 0, 1))
 
+
+class Normalize():
+    def __init__(self, mean = (0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225)):
+
+        self.mean = mean
+        self.std = std
+
+    def undo(self, imgarr):
+        proc_img = imgarr.copy()
+
+        proc_img[..., 0] = (self.std[0] * imgarr[..., 0] + self.mean[0]) * 255.
+        proc_img[..., 1] = (self.std[1] * imgarr[..., 1] + self.mean[1]) * 255.
+        proc_img[..., 2] = (self.std[2] * imgarr[..., 2] + self.mean[2]) * 255.
+
+        return proc_img
+
+    def __call__(self, img):
+        imgarr = np.asarray(img)
+        proc_img = np.empty_like(imgarr, np.float32)
+
+        proc_img[..., 0] = (imgarr[..., 0] / 255. - self.mean[0]) / self.std[0]
+        proc_img[..., 1] = (imgarr[..., 1] / 255. - self.mean[1]) / self.std[1]
+        proc_img[..., 2] = (imgarr[..., 2] / 255. - self.mean[2]) / self.std[2]
+
+        return proc_img
+
+
 if __name__ == '__main__':
 
 
     # loading the model
-    args = get_arguments(sys.argv[1:])
+    # args = get_arguments(sys.argv[1:])
+    args = get_deeplabarguments(sys.argv[1:])
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -57,7 +85,6 @@ if __name__ == '__main__':
 
     # initialising the dirs
     check_dir(args.mask_output_dir, "vis")
-    check_dir(args.mask_output_dir, "crf")
     check_dir(args.mask_output_dir, "no_crf")
 
     # Loading the model
@@ -70,6 +97,7 @@ if __name__ == '__main__':
     checkpoint = Checkpoint(args.snapshot_dir, max_n=5)
     checkpoint.add_model('enc', model)
     checkpoint.load(args.resume)
+    print('load from', args.resume)
 
     for p in model.parameters():
         p.requires_grad = False
@@ -77,14 +105,14 @@ if __name__ == '__main__':
     # setting the evaluation mode
     model.eval()
 
-    assert hasattr(model, 'normalize')
-    transform = tf.Compose([np.asarray, model.normalize])
+    # assert hasattr(model, 'normalize')
+    transform = tf.Compose([np.asarray,  Normalize()])
 
     WriterClass, DatasetClass = get_inference_io(cfg.TEST.METHOD)
 
     dataset = DatasetClass(args.infer_list, cfg.TEST, transform=transform)
 
-    dataloader = DataLoader(dataset, shuffle=False, num_workers=args.workers, \
+    dataloader = DataLoader(dataset, shuffle=False, num_workers=args.workers,
                             pin_memory=True, batch_size=cfg.TEST.BATCH_SIZE)
 
     model = nn.DataParallel(model).cuda()
@@ -95,8 +123,8 @@ if __name__ == '__main__':
     palette = dataset.get_palette()
     pool = mp.Pool(processes=args.workers)
     writer = WriterClass(cfg.TEST, palette, args.mask_output_dir,
-                         prospect_thresh=0, background_thresh=0,
-                         heatmap=False)
+                         prospect_thresh=0,
+                         heatmap=False, scoremap=False, CRF=False)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
@@ -109,10 +137,12 @@ if __name__ == '__main__':
         # saving the raw npy
         image = dataset.denorm(img_orig[0]).numpy()
         masks_pred = masks_pred.cpu()
-        labels = labels.type_as(masks_pred)
-
-        # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
-        pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+        labels = torch.ones_like(labels[0])
+        # labels = labels.type_as(masks_pred)
+        # print(masks_pred.size())
+        # print(labels.size())
+        writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
+        # pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
 
         timer.update_progress(float(iter + 1) / N)
         if iter % 100 == 0:

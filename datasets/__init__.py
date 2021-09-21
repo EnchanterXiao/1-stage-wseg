@@ -11,12 +11,12 @@ def get_num_classes(args):
 def get_class_names(args):
     return datasets[args.dataset.lower()].CLASSES
 
-def get_dataloader(args, cfg, split, batch_size=None, test_mode=None, scoremap_path=False):
+def get_dataloader(args, cfg, split, batch_size=None, test_mode=None, scoremap_path=''):
     # assert split in ('train', 'train_voc', 'val'), "Unknown split '{}'".format(split)
 
     dataset_name = args.dataset.lower()
     dataset_cls = datasets[dataset_name]
-    dataset = dataset_cls(cfg, split, test_mode, root=cfg.DATASET.ROOT, scoremp_path=scoremap_path)
+    dataset = dataset_cls(cfg, split, test_mode, root=cfg.DATASET.ROOT, scoremap_path=scoremap_path)
 
     kwargs = {'num_workers': args.workers, 'pin_memory': True}
     shuffle, drop_last = [True, True] if split == 'train' else [False, False]

@@ -1,0 +1,20 @@
+1. 分类网络的训练 bash ./launch/run_voc_resnet38.sh
+    修改数据集 yaml文件中的FILENAME train_augvoc val_voc
+
+2. 分类网络的推理 bash ./launch/infer_val.sh
+    修改数据集 FILELIST=../1sw/data/val_voc.txt ../1sw/data/train_augvoc.txt
+
+3. 测评 bash ./launch/eval_seg.sh
+    修改对应的mask路径即可
+
+4. 生成伪语义信息的路径文件
+    python3 Generate_maskPath.py (修改路径)
+
+5. 语义分割网络训练 bash ./launch/run_deeplab.sh
+    修改数据集 yaml文件中的FILENAME train_augvoc val_voc
+
+6. 语义分割网络的推理 bash ./launch/infer_val.sh
+    修改数据集 FILELIST=../1sw/data/val_voc.txt
+
+7. 语义分割测评 bash ./launch/eval_seg.sh
+    修改对应的mask路径即可

@@ -5,16 +5,16 @@
 #
 CONFIG=configs/voc_deeplab.yaml
 DATASET=pascal_voc
-FILELIST=data/val_voc.txt
+FILELIST=../1sw/data/val_voc.txt
 
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v0917
-RUN_ID=ae
-SNAPSHOT=e017Xs0.898
+EXP=v0921
+RUN_ID=deeplab
+SNAPSHOT=e000Xs1.727
 EXTRA_ARGS=
-SAVE_ID=ae
+SAVE_ID=deeplab
 #
 ##
 

@@ -5,7 +5,8 @@
 #
 CONFIG=configs/voc_resnet38.yaml
 DATASET=pascal_voc
-FILELIST=../1sw/data/val_voc.txt
+#FILELIST=../1sw/data/val_voc.txt
+FILELIST=../1sw/data/train_augvoc.txt
 
 ## You values here (see below how they're used)
 #
