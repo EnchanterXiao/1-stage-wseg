@@ -95,7 +95,7 @@ if __name__ == '__main__':
     N = len(dataloader)
 
     palette = dataset.get_palette()
-    pool = mp.Pool(processes=args.workers)
+    # pool = mp.Pool(processes=args.workers)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
@@ -120,11 +120,11 @@ if __name__ == '__main__':
         labels = labels.type_as(masks_pred)
 
         for prospect_thresh, heatmap, scoremap in zip(prospect_threshs, heatmaps, scoremaps):
-            # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
             writer = WriterClass(cfg.TEST, palette, args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1],
                                  prospect_thresh=prospect_thresh,
                                  heatmap=heatmap, scoremap=scoremap)
-            pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+            writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
+            # pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
 
         timer.update_progress(float(iter + 1) / N)
         if iter % 100 == 0:
@@ -132,5 +132,5 @@ if __name__ == '__main__':
             tqdm.write(msg)
             sys.stdout.flush()
 
-    pool.close()
-    pool.join()
+    # pool.close()
+    # pool.join()

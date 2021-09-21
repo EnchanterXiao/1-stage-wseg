@@ -110,7 +110,7 @@ class ResultWriter:
             scipy.misc.imsave(filepath, heat_map)
 
         if self.scoremap:
-            np.save(os.path.join(self.root, "heatmap", img_name + '.npy'), score_map)
+            np.save(os.path.join(self.root, "scoremap", img_name + '.npy'), score_map)
 
 class MergeMultiScale(ResultWriter):
 
