@@ -10,10 +10,11 @@ from PIL import Image
 from utils.dcrf import crf_inference
 
 from datasets.pascal_voc_ms import MultiscaleLoader, CropLoader 
-
+import time
 class ResultWriter:
     
-    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True, heatmap=True, scoremap=True):
+    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True,
+                 heatmap=True, scoremap=True, CRF=True):
         self.cfg = cfg
         self.palette = palette
         self.root = out_path
@@ -22,6 +23,7 @@ class ResultWriter:
         self.prospect_thresh = prospect_thresh
         self.background_thresh = background_thresh
         self.scoremap = scoremap
+        self.CRF = CRF
 
 
     def _mask_overlay(self, mask, image, alpha=0.3):
@@ -62,39 +64,49 @@ class ResultWriter:
 
         # converting original image to [0, 255]
         img_orig255 = np.round(255. * img_orig).astype(np.uint8)
-        img_orig255 = np.transpose(img_orig255, [1,2,0])
+        img_orig255 = np.transpose(img_orig255, [1, 2, 0])
         img_orig255 = np.ascontiguousarray(img_orig255)
 
         merged_mask = self._merge_masks(all_masks, pads, labels, img_orig255.shape[:2])
-        heat_map = np.max(merged_mask[1:, :, :], axis=0)
-        score_map = np.max(merged_mask[1:, :, :], axis=0)
+        if self.heatmap:
+            heat_map = np.max(merged_mask[1:, :, :], axis=0)
+        if self.scoremap:
+            score_map = np.max(merged_mask[1:, :, :], axis=0)
 
         # CRF
-        pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
-        index = list(np.where(pred_crf[1:, :, :] < self.prospect_thresh))
-        index[0] += 1
-        pred_crf[index] = 0
-        pred_crf = np.argmax(pred_crf, 0)
+        if self.CRF:
+            pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
+            index = list(np.where(pred_crf[1:, :, :] < self.prospect_thresh))
+            index[0] += 1
+            pred_crf[tuple(index)] = 0
+            pred_crf = np.argmax(pred_crf, 0)
 
 
         index = list(np.where(merged_mask[1:, :, :]<self.prospect_thresh))
         index[0] += 1
-        merged_mask[index] = 0
+        merged_mask[tuple(index)] = 0
         pred = np.argmax(merged_mask, 0)
-        index = list(np.where(pred==0))
-        score_map[index] = 1 - score_map[index]
+        if self.scoremap:
+            index = list(np.where(pred==0))
+            score_map[tuple(index)] = 1 - score_map[tuple(index)]
 
 
         filepath = os.path.join(self.root, "no_crf", img_name + '.png')
         scipy.misc.imsave(filepath, pred.astype(np.uint8))
 
-        filepath = os.path.join(self.root, "crf", img_name + '.png')
-        scipy.misc.imsave(filepath, pred_crf.astype(np.uint8))
+        if self.CRF:
+            filepath = os.path.join(self.root, "crf", img_name + '.png')
+            scipy.misc.imsave(filepath, pred_crf.astype(np.uint8))
 
         if self.verbose:
             mask_gt = gt_mask.numpy()
-            masks_all = np.concatenate([pred, pred_crf, mask_gt], 1).astype(np.uint8)
-            images = np.concatenate([img_orig]*3, 2)
+            if self.CRF:
+                masks_all = np.concatenate([pred, pred_crf, mask_gt], 1).astype(np.uint8)
+                images = np.concatenate([img_orig]*3, 2)
+            else:
+                masks_all = np.concatenate([pred, mask_gt], 1).astype(np.uint8)
+                images = np.concatenate([img_orig] * 2, 2)
+
             images = np.transpose(images, [1,2,0])
             
             overlay = self._mask_overlay(masks_all, images)
