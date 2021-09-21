@@ -29,7 +29,7 @@ from utils.metrics import Metric
 # Defining
 parser = argparse.ArgumentParser(description="Mask Evaluation")
 
-parser.add_argument("--data", type=str, default='./data/annotation',
+parser.add_argument("--data", type=str, default='../1sw/data/annotation',
                     help="The prefix for data directory")
 parser.add_argument("--filelist", type=str, default='./data/val.txt',
                     help="A text file containing the paths to masks")
@@ -284,6 +284,7 @@ def evaluate_all(args):
 if __name__ == "__main__":
 
     args = parser.parse_args(sys.argv[1:])
+    print(args)
     check_args(args)
     stats = evaluate_all(args)
     summarise_stats(stats)
