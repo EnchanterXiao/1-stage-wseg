@@ -140,7 +140,8 @@ class VOCSegmentation(PascalVOC):
                 self.images.append(_image)
             
                 if self.split != 'test':
-                    _mask = os.path.join(self.root, _mask.lstrip('/'))
+                    if self.split in ['train_augvoc', 'val_voc']:
+                        _mask = os.path.join(self.root, _mask.lstrip('/'))
                     assert os.path.isfile(_mask), '%s not found' % _mask
                     self.masks.append(_mask)
 
