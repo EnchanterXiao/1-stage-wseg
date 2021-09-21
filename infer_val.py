@@ -43,18 +43,14 @@ def check_dir(base_path, name):
 def HWC_to_CHW(img):
     return np.transpose(img, (2, 0, 1))
 
-def save_scoremap(path, name, scoremap):
-    np.save(os.path.join(path, name+'.npy'), scoremap)
-
 if __name__ == '__main__':
-
+    prospect_threshs = [0.0, 0.3, 0.5, 0.7]
+    heatmaps = [True, False, False, False, False]
+    scoremaps = [True, False, False, False, False]
 
     # loading the model
     args = get_arguments(sys.argv[1:])
-    prospect_thresh = 0.0
-    background_thresh = 0.0
-    heatmap=False
-    scoremap = False
+
 
     # reading the config
     cfg_from_file(args.cfg_file)
@@ -62,11 +58,14 @@ if __name__ == '__main__':
         cfg_from_list(args.set_cfgs)
 
     # initialising the dirs
-    check_dir(args.mask_output_dir, "vis")
-    check_dir(args.mask_output_dir, "crf")
-    check_dir(args.mask_output_dir, "no_crf")
-    check_dir(args.mask_output_dir, "heatmap")
-    check_dir(args.mask_output_dir, "scoremap")
+    for prospect_thresh, heatmap, scoremap in zip(prospect_threshs, heatmaps, scoremaps):
+        check_dir(args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1], "vis")
+        check_dir(args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1], "crf")
+        check_dir(args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1], "no_crf")
+        if heatmap:
+            check_dir(args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1], "heatmap")
+        if scoremap:
+            check_dir(args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1], "scoremap")
 
     # Loading the model
     model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
@@ -97,9 +96,6 @@ if __name__ == '__main__':
 
     palette = dataset.get_palette()
     pool = mp.Pool(processes=args.workers)
-    writer = WriterClass(cfg.TEST, palette, args.mask_output_dir,
-                         prospect_thresh=prospect_thresh, background_thresh=background_thresh,
-                         heatmap=heatmap)
 
     for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
@@ -123,12 +119,12 @@ if __name__ == '__main__':
         masks_pred = masks_pred.cpu()
         labels = labels.type_as(masks_pred)
 
-        # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
-        pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
-
-        #save score map
-        if scoremap:
-            save_scoremap(args.mask_output_dir, os.path.basename(img_name[0]).split('.')[0], None)
+        for prospect_thresh, heatmap, scoremap in zip(prospect_threshs, heatmaps, scoremaps):
+            # writer.save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
+            writer = WriterClass(cfg.TEST, palette, args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1],
+                                 prospect_thresh=prospect_thresh,
+                                 heatmap=heatmap, scoremap=scoremap)
+            pool.apply_async(writer.save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
 
         timer.update_progress(float(iter + 1) / N)
         if iter % 100 == 0:

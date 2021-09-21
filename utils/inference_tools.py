@@ -13,7 +13,7 @@ from datasets.pascal_voc_ms import MultiscaleLoader, CropLoader
 
 class ResultWriter:
     
-    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True, heatmap=True):
+    def __init__(self, cfg, palette, out_path, prospect_thresh=0.5, background_thresh=0.0, verbose=True, heatmap=True, scoremap=True):
         self.cfg = cfg
         self.palette = palette
         self.root = out_path
@@ -21,6 +21,7 @@ class ResultWriter:
         self.heatmap = heatmap
         self.prospect_thresh = prospect_thresh
         self.background_thresh = background_thresh
+        self.scoremap = scoremap
 
 
     def _mask_overlay(self, mask, image, alpha=0.3):
@@ -65,7 +66,8 @@ class ResultWriter:
         img_orig255 = np.ascontiguousarray(img_orig255)
 
         merged_mask = self._merge_masks(all_masks, pads, labels, img_orig255.shape[:2])
-        score_map = np.max(merged_mask, axis=0)
+        heat_map = np.max(merged_mask[1:, :, :], axis=0)
+        score_map = np.max(merged_mask[1:, :, :], axis=0)
 
         # CRF
         pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
@@ -79,6 +81,9 @@ class ResultWriter:
         index[0] += 1
         merged_mask[index] = 0
         pred = np.argmax(merged_mask, 0)
+        index = list(np.where(pred==0))
+        score_map[index] = 1 - score_map[index]
+
 
         filepath = os.path.join(self.root, "no_crf", img_name + '.png')
         scipy.misc.imsave(filepath, pred.astype(np.uint8))
@@ -99,10 +104,13 @@ class ResultWriter:
 
         if self.heatmap:
             image = np.transpose(img_orig, [1,2,0])
-            heat_map = self._heatmap_overlay(score_map, image)
+            heat_map = self._heatmap_overlay(heat_map, image)
             filepath = os.path.join(self.root, "heatmap", img_name + '.png')
             heat_map = np.round(heat_map * 255.).astype(np.uint8)
             scipy.misc.imsave(filepath, heat_map)
+
+        if self.scoremap:
+            np.save(os.path.join(self.root, "heatmap", img_name + '.npy'), score_map)
 
 class MergeMultiScale(ResultWriter):
 
