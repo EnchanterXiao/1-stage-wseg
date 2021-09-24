@@ -5,12 +5,12 @@ DATASET:
   SCALE_TO: 2.0
   ROOT: "../1sw/data"
   NAME: 'sbd'
-  FILENAME: "train_augvoc"
+  FILENAME: "train_augvoc" #"train_gen_bsl" "train_augvoc"
 TRAIN:
   BATCH_SIZE: 8
   NUM_EPOCHS: 50
   NUM_WORKERS: 8
-  PRETRAIN: 5
+  PRETRAIN: 0
 TEST:
   METHOD: "multiscale"
   DATA_ROOT: "../1sw/data"

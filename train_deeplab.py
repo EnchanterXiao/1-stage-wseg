@@ -71,7 +71,7 @@ class DecTrainer(BaseTrainer):
         # optimizer using different LR
         # Define Optimizer
         self.optim_enc = torch.optim.SGD(train_params, momentum=args.momentum,
-                                    weight_decay=args.weight_decay, nesterov=args.nesterov)
+                                         weight_decay=args.weight_decay, nesterov=args.nesterov)
 
         if args.use_balanced_weights:
             classes_weights_path = os.path.join(cfg.DATASET.ROOT, cfg.DATASET.NAME+'_classes_weights.npy')
@@ -85,15 +85,11 @@ class DecTrainer(BaseTrainer):
         self.criterion = SegmentationLosses(weight=weight, cuda=True).build_loss(mode=args.loss_type)
 
         self.scheduler = LR_Scheduler(args.lr_scheduler, args.lr, cfg.TRAIN.NUM_EPOCHS, len(self.trainloader))
+
         # checkpoint management
         self._define_checkpoint('enc', self.enc, self.optim_enc)
+        print('load resume:', args.resume)
         self._load_checkpoint(args.resume)
-
-        self.fixed_batch = None
-        self.fixed_batch_path = args.fixed_batch_path
-        if os.path.isfile(self.fixed_batch_path):
-            print("Loading fixed batch from {}".format(self.fixed_batch_path))
-            self.fixed_batch = torch.load(self.fixed_batch_path)
 
         # using cuda
         self.enc = nn.DataParallel(self.enc).cuda()
@@ -104,95 +100,60 @@ class DecTrainer(BaseTrainer):
     def step(self, epoch, iterations, image, gt_labels, train=False):
 
         # denorm image
-        image_raw = self.denorm(image.clone())
+        # image_raw = self.denorm(image.clone())
+        image = image.cuda()
         cls_labels = gt_labels[0].cuda()
         mask_label = gt_labels[1].cuda()
         score_label = gt_labels[2].cuda()
 
-        output = self.enc(image_raw)
-
-        #seg_loss
-        loss = self.criterion(output, mask_label)
-
-        # keep track of all losses for logging
-        losses = {}
-        losses["loss"] = loss.item()
-
         if train:
-            self.writer.add_scalar('loss', losses["loss"], self.steps)
             self.scheduler(self.optim_enc, iterations, epoch, self.best_pred)
             self.optim_enc.zero_grad()
+        output = self.enc(image)
+        #seg_loss
+        loss = self.criterion(output, mask_label)
+        if train:
             loss.backward()
             self.optim_enc.step()
             self.steps += 1
+            self.writer.add_scalar('loss', loss.item(), self.steps)
 
         mask_logits = output.detach()
 
         # make sure to cut the return values from graph
-        return losses, output, mask_logits
+        return loss.item(), output, mask_logits
 
     def train_epoch(self, epoch):
         self.enc.train()
-
         stat = StatManager()
-        stat.add_val("loss")
-        stat.add_val("loss_cls")
-        stat.add_val("loss_fg")
-        stat.add_val("loss_bce")
 
         # adding stats for classes
         timer = Timer("New Epoch: ")
         train_step = partial(self.step, train=True)
-
-        for i, (image, gt_labels, _, gt_masks, _) in enumerate(self.trainloader):
-
-            # masks
-            losses, _, _ = train_step(epoch, i, image, [gt_labels, gt_masks, _])
-
-            for loss_key, loss_val in losses.items():
-                stat.update_stats(loss_key, loss_val)
-
+        train_loss = 0.0
+        for i, (image, gt_labels, image_name, gt_masks, mask_score) in enumerate(self.trainloader):
+            losses, _, _ = train_step(epoch, i, image, [gt_labels, gt_masks, mask_score])
+            train_loss += losses
             # intermediate logging
             if i % 10 == 0:
                 msg = "Epoch[{}] Loss [{:04d}]: ".format(epoch, i)
-                for loss_key, loss_val in losses.items():
-                    msg += "{}: {:.4f} | ".format(loss_key, loss_val)
-
+                msg += "{}: {:.4f} | ".format('loss', train_loss/(i+1))
                 msg += " | Im/Sec: {:.1f}".format(i * cfg.TRAIN.BATCH_SIZE / timer.get_stage_elapsed())
                 print(msg)
                 sys.stdout.flush()
-
-            del image, gt_labels
-
-        def publish_loss(stats, name, t, prefix='data/'):
-            print("{}: {:4.3f}".format(name, stats.summarize_key(name)))
-            # self.writer.add_scalar(prefix + name, stats.summarize_key(name), t)
-
-        for stat_key in stat.vals.keys():
-            publish_loss(stat, stat_key, epoch)
-
         # plotting learning rate
         for ii, l in enumerate(self.optim_enc.param_groups):
             print("Learning rate [{}]: {:4.3e}".format(ii, l['lr']))
             self.writer.add_scalar('lr/enc_group_%02d' % ii, l['lr'], epoch)
-
-        # self.writer.add_scalar('lr/bg_baseline', self.enc.module.mean.item(), epoch)
-
-        # visualising
-        self.enc.eval()
+        print('Loss: %.3f'% train_loss)
 
     def validation(self, epoch, writer, loader, checkpoint=False):
-
-        stat = StatManager()
 
         # Fast test during the training
         def eval_batch(epoch, iters, image, gt_labels):
 
             losses, masks, mask_logits = \
                 self.step(epoch, iters, image, gt_labels, train=False)
-
-            for loss_key, loss_val in losses.items():
-                stat.update_stats(loss_key, loss_val)
 
             return losses, masks, mask_logits.cpu()
 
@@ -206,9 +167,9 @@ class DecTrainer(BaseTrainer):
         # count of the images
         num_im = 0
 
-        for n, (image, gt_labels, _, gt_masks, _) in tqdm.tqdm(enumerate(loader)):
+        for n, (image, gt_labels, img_name, gt_masks, scoremap) in tqdm.tqdm(enumerate(loader)):
             with torch.no_grad():
-                losses, masks_all, mask_logits = eval_batch(0, n, image, [gt_labels, gt_masks, _])
+                losses, masks_all, mask_logits = eval_batch(0, n, image, [gt_labels, gt_masks, scoremap])
                 # print(gt_masks.size())
                 # print(mask_logits.size())
                 mask_logits = torch.argmax(mask_logits, dim=1)
@@ -216,40 +177,21 @@ class DecTrainer(BaseTrainer):
                 num_im += 1
 
         mIOU = summarise_stats(conf_mat)
-        # total classification loss
         writer.add_scalar('mIOU', mIOU, epoch)
         self.best_pred = max(mIOU, self.best_pred)
         if checkpoint and epoch >= cfg.TRAIN.PRETRAIN:
-            # we will use mAP - mask_loss as our proxy score
-            # to save the best checkpoint so far
             proxy_score = mIOU
             writer.add_scalar('checkpoint_score', proxy_score, epoch)
             self.checkpoint_best(proxy_score, epoch)
 
-    def _mask_rgb(self, masks, image_norm):
-        # visualising masks
-        masks_conf, masks_idx = torch.max(masks, 1)
-        masks_conf = masks_conf - F.relu(masks_conf - 1, 0)
-
-        masks_idx_rgb = self._apply_cmap(masks_idx.cpu(), masks_conf.cpu())
-        return 0.3 * image_norm + 0.7 * masks_idx_rgb
-
-    def _init_norm(self):
-        self.trainloader.dataset.set_norm(self.enc.normalize)
-        self.valloader.dataset.set_norm(self.enc.normalize)
-
-    def _apply_cmap(self, mask_idx, mask_conf):
-        palette = self.trainloader.dataset.get_palette()
-
-        masks = []
-        col = Colorize()
-        mask_conf = mask_conf.float() / 255.0
-        for mask, conf in zip(mask_idx.split(1), mask_conf.split(1)):
-            m = col(mask).float()
-            m = m * conf
-            masks.append(m[None, ...])
-
-        return torch.cat(masks, 0)
+    def dataloader_test(self):
+        for i, (image, gt_labels, image_name, gt_masks, score) in enumerate(self.trainloader):
+            print(image_name)
+            # print(image)
+            print(torch.unique(gt_masks))
+            print(gt_labels)
+            # print(score)
+            if i==10:break
 
 
 def evaluate_one(conf_mat, mask_gt, mask):
@@ -257,6 +199,9 @@ def evaluate_one(conf_mat, mask_gt, mask):
     gt = mask_gt.reshape(-1)
     pred = mask.reshape(-1)
 
+    indexs = np.where(gt==255)
+    gt = np.delete(gt, indexs)
+    pred = np.delete(pred, indexs)
     assert(len(gt) == len(pred))
 
     # for i in range(len(gt)):
@@ -296,8 +241,8 @@ def summarise_stats(M):
     def print_row(fmt, row):
         print(fmt.format(*row))
 
-    # print_row(head_fmt, ("Class", "#", "IoU", "Pr", "Re"))
-    # print(split)
+    print_row(head_fmt, ("Class", "#", "IoU", "Pr", "Re"))
+    print(split)
 
     for cat in PascalVOC.CLASSES[:-1]:
 
@@ -318,8 +263,8 @@ def summarise_stats(M):
             mean.update_value(Metric.Precision, pr)
             mean.update_value(Metric.Recall, re)
 
-        # count = int(np.sum(M[i, :]))
-        # print_row(row_fmt, (cat, count, iou, pr, re))
+        count = int(np.sum(M[i, :]))
+        print_row(row_fmt, (cat, count, iou, pr, re))
 
 
     print(split)
@@ -356,16 +301,15 @@ if __name__ == "__main__":
         func(*args, **kwargs)
         print(msg + (" {:3.2}m".format(timer.get_stage_elapsed() / 60.)))
 
+    # trainer.dataloader_test()
 
     with torch.no_grad():
         time_call(trainer.validation, "Validation /   Val: ", 0, trainer.writer_val, trainer.valloader,
                   checkpoint=False)
 
-    for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS + 1):
+    for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS):
         print("Epoch >>> ", epoch)
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
         with torch.no_grad():
             time_call(trainer.validation, "Validation /   Val: ", epoch+1, trainer.writer_val, trainer.valloader,
                           checkpoint=True)
-        # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-        #           checkpoint=True)

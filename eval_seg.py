@@ -184,6 +184,8 @@ def evaluate_one(conf_mat, mask_gt, mask):
 
 
 def read_mask_file(filepath):
+    # print(filepath)
+    # print(np.array(Image.open(filepath)).shape)
     return np.array(Image.open(filepath))
 
 

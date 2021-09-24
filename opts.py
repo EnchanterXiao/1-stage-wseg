@@ -90,7 +90,7 @@ def get_deeplabarguments(args_in):
                         help='backbone name (default: resnet)')
     parser.add_argument('--out-stride', type=int, default=16,
                         help='network output stride (default: 8)')
-    parser.add_argument('--sync-bn', type=bool, default=None,
+    parser.add_argument('--sync-bn', type=bool, default=False,
                         help='whether to use sync bn (default: auto)')
     parser.add_argument('--freeze-bn', type=bool, default=False,
                         help='whether to freeze bn parameters (default: False)')

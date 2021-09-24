@@ -10,9 +10,9 @@ FILELIST=../1sw/data/val_voc.txt
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v0922
+EXP=v0923
 RUN_ID=deeplab
-SNAPSHOT=e006Xs23.055
+SNAPSHOT=e047Xs24.550
 EXTRA_ARGS=
 SAVE_ID=deeplab
 #
