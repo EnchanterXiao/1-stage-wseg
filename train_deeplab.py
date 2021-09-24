@@ -26,6 +26,7 @@ from utils.stat_manager import StatManager
 from utils.calculate_weights import calculate_weigths_labels
 from utils.metrics import Metric
 from datasets.pascal_voc import PascalVOC
+from utils.lr_scheduler import LR_Scheduler
 
 torch.backends.cudnn.benchmark = True
 # torch.backends.cudnn.deterministic = True
@@ -83,6 +84,7 @@ class DecTrainer(BaseTrainer):
             weight = None
         self.criterion = SegmentationLosses(weight=weight, cuda=True).build_loss(mode=args.loss_type)
 
+        self.scheduler = LR_Scheduler(args.lr_scheduler, args.lr, cfg.TRAIN.NUM_EPOCHS, len(self.trainloader))
         # checkpoint management
         self._define_checkpoint('enc', self.enc, self.optim_enc)
         self._load_checkpoint(args.resume)
@@ -96,8 +98,10 @@ class DecTrainer(BaseTrainer):
         # using cuda
         self.enc = nn.DataParallel(self.enc).cuda()
         # self.criterion = nn.DataParallel(self.criterion).cuda()
+        self.best_pred = 0.0
+        self.steps = 0
 
-    def step(self, image, gt_labels, train=False):
+    def step(self, epoch, iterations, image, gt_labels, train=False):
 
         # denorm image
         image_raw = self.denorm(image.clone())
@@ -110,17 +114,17 @@ class DecTrainer(BaseTrainer):
         #seg_loss
         loss = self.criterion(output, mask_label)
 
-        # classification loss
-        # loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
-
         # keep track of all losses for logging
         losses = {}
         losses["loss"] = loss.item()
 
         if train:
+            self.writer.add_scalar('loss', losses["loss"], self.steps)
+            self.scheduler(self.optim_enc, iterations, epoch, self.best_pred)
             self.optim_enc.zero_grad()
             loss.backward()
             self.optim_enc.step()
+            self.steps += 1
 
         mask_logits = output.detach()
 
@@ -143,7 +147,7 @@ class DecTrainer(BaseTrainer):
         for i, (image, gt_labels, _, gt_masks, _) in enumerate(self.trainloader):
 
             # masks
-            losses, _, _ = train_step(image, [gt_labels, gt_masks, _])
+            losses, _, _ = train_step(epoch, i, image, [gt_labels, gt_masks, _])
 
             for loss_key, loss_val in losses.items():
                 stat.update_stats(loss_key, loss_val)
@@ -182,10 +186,10 @@ class DecTrainer(BaseTrainer):
         stat = StatManager()
 
         # Fast test during the training
-        def eval_batch(image, gt_labels):
+        def eval_batch(epoch, iters, image, gt_labels):
 
             losses, masks, mask_logits = \
-                self.step(image, gt_labels, train=False)
+                self.step(epoch, iters, image, gt_labels, train=False)
 
             for loss_key, loss_val in losses.items():
                 stat.update_stats(loss_key, loss_val)
@@ -204,7 +208,7 @@ class DecTrainer(BaseTrainer):
 
         for n, (image, gt_labels, _, gt_masks, _) in tqdm.tqdm(enumerate(loader)):
             with torch.no_grad():
-                losses, masks_all, mask_logits = eval_batch(image, [gt_labels, gt_masks, _])
+                losses, masks_all, mask_logits = eval_batch(0, n, image, [gt_labels, gt_masks, _])
                 # print(gt_masks.size())
                 # print(mask_logits.size())
                 mask_logits = torch.argmax(mask_logits, dim=1)
@@ -214,12 +218,12 @@ class DecTrainer(BaseTrainer):
         mIOU = summarise_stats(conf_mat)
         # total classification loss
         writer.add_scalar('mIOU', mIOU, epoch)
-
+        self.best_pred = max(mIOU, self.best_pred)
         if checkpoint and epoch >= cfg.TRAIN.PRETRAIN:
             # we will use mAP - mask_loss as our proxy score
             # to save the best checkpoint so far
             proxy_score = mIOU
-            writer.add_scalar('all/checkpoint_score', proxy_score, epoch)
+            writer.add_scalar('checkpoint_score', proxy_score, epoch)
             self.checkpoint_best(proxy_score, epoch)
 
     def _mask_rgb(self, masks, image_norm):
@@ -292,8 +296,8 @@ def summarise_stats(M):
     def print_row(fmt, row):
         print(fmt.format(*row))
 
-    print_row(head_fmt, ("Class", "#", "IoU", "Pr", "Re"))
-    print(split)
+    # print_row(head_fmt, ("Class", "#", "IoU", "Pr", "Re"))
+    # print(split)
 
     for cat in PascalVOC.CLASSES[:-1]:
 
@@ -314,8 +318,8 @@ def summarise_stats(M):
             mean.update_value(Metric.Precision, pr)
             mean.update_value(Metric.Recall, re)
 
-        count = int(np.sum(M[i, :]))
-        print_row(row_fmt, (cat, count, iou, pr, re))
+        # count = int(np.sum(M[i, :]))
+        # print_row(row_fmt, (cat, count, iou, pr, re))
 
 
     print(split)
@@ -353,16 +357,15 @@ if __name__ == "__main__":
         print(msg + (" {:3.2}m".format(timer.get_stage_elapsed() / 60.)))
 
 
+    with torch.no_grad():
+        time_call(trainer.validation, "Validation /   Val: ", 0, trainer.writer_val, trainer.valloader,
+                  checkpoint=False)
+
     for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS + 1):
         print("Epoch >>> ", epoch)
-
-        with torch.no_grad():
-            if epoch == 0:
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=False)
-            else:
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=True)
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
-        time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                  checkpoint=True)
+        with torch.no_grad():
+            time_call(trainer.validation, "Validation /   Val: ", epoch+1, trainer.writer_val, trainer.valloader,
+                          checkpoint=True)
+        # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+        #           checkpoint=True)

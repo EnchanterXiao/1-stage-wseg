@@ -199,6 +199,9 @@ class VOCSegmentation(PascalVOC):
         image, mask, score = self.transform(image, mask, score)
         if len(mask.size())>=3:
             mask = mask[:, :, 0]
+            print(torch.sum(mask[:, :, 0]), torch.sum(mask[:, :, 1]), torch.sum(mask[:, :, 2]))
+        # else:
+            # print(torch.sum(mask))
         if len(score.size())>=3:
             score = score[:, :, 0]
         a = torch.zeros_like(mask)

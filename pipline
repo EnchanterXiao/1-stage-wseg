@@ -11,7 +11,7 @@
     python3 Generate_maskPath.py (修改路径)
 
 5. 语义分割网络训练 bash ./launch/run_deeplab.sh
-    修改数据集 yaml文件中的FILENAME train_augvoc val_voc
+    修改数据集 yaml文件中的FILENAME train_augvoc val_voc train_gen_bsl
 
 6. 语义分割网络的推理 bash ./launch/infer_val.sh
     修改数据集 FILELIST=../1sw/data/val_voc.txt

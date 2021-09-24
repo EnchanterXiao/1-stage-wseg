@@ -3,7 +3,7 @@
 ## Your values here:
 #
 DS=pascal_voc
-EXP=v0921
+EXP=v0923
 RUN_ID=deeplab
 #
 ##
