@@ -19,7 +19,8 @@ def get_dataloader(args, cfg, split, batch_size=None, test_mode=None, scoremap_p
     dataset = dataset_cls(cfg, split, test_mode, root=cfg.DATASET.ROOT, scoremap_path=scoremap_path)
 
     kwargs = {'num_workers': args.workers, 'pin_memory': True}
-    shuffle, drop_last = [True, True] if split == 'train' else [False, False]
+    shuffle, drop_last = [True, True] if split != 'val_voc' else [False, False]
+    print(split, shuffle)
 
     if batch_size is None:
         batch_size = cfg.TRAIN.BATCH_SIZE

@@ -78,7 +78,7 @@ class DecTrainer(BaseTrainer):
             if os.path.isfile(classes_weights_path):
                 weight = np.load(classes_weights_path)
             else:
-                weight = calculate_weigths_labels(cfg.DATASET.ROOT, cfg.DATASET.NAME, self.train_loader, self.nclass)
+                weight = calculate_weigths_labels(cfg.DATASET.ROOT, cfg.DATASET.NAME, self.trainloader, self.nclass)
             weight = torch.from_numpy(weight.astype(np.float32))
         else:
             weight = None

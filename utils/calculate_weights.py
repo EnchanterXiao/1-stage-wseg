@@ -8,7 +8,7 @@ def calculate_weigths_labels(path, dataset, dataloader, num_classes):
     # Initialize tqdm
     tqdm_batch = tqdm(dataloader)
     print('Calculating classes weights')
-    for _, _, _, y in tqdm_batch:
+    for _, _, _, y, _ in tqdm_batch:
         y = y.detach().cpu().numpy()
         mask = (y >= 0) & (y < num_classes)
         labels = y[mask].astype(np.uint8)
