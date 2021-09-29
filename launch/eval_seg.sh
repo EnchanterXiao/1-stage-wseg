@@ -1,8 +1,8 @@
 #!/bin/bash
 
 DATASET=pascal_voc
-#FILELIST=../1sw/data/val_voc.txt # validation
-FILELIST=../1sw/data/train_augvoc.txt
+FILELIST=../1sw/data/val_voc.txt # validation
+#FILELIST=../1sw/data/train_augvoc.txt
 ## You values here:
 #
 OUTPUT_DIR=../1sw/output

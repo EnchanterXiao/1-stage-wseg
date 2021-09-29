@@ -257,6 +257,8 @@ def evaluate_all(args):
                 mask = oracle_lower(mask_gt, oh, ow, alpha=0.5)
             else:
                 basename = os.path.basename(files[1])
+                # print(basename)
+                basename = basename.split('.')[0]+'.jpg.png'
                 filepath = os.path.join(args.masks, basename)
                 if not os.path.isfile(filepath):
                     print("File not found: {}".format(filepath))
