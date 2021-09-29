@@ -159,7 +159,7 @@ class VOCSegmentation(PascalVOC):
         self.transform = tf.Compose([
                                      tf.MaskRandResizedCrop(self.cfg.DATASET),
                                      tf.MaskHFlip(),
-                                     tf.RandomGaussianBlur(),
+                                     # tf.RandomGaussianBlur(),
                                      tf.MaskColourJitter(p=1.0),
                                      tf.MaskNormalise(self.MEAN, self.STD),
                                      # tf.MaskToTensor()
