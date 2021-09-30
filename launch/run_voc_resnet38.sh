@@ -3,7 +3,7 @@
 ## Your values here:
 #
 DS=pascal_voc
-EXP=v0920
+EXP=v0930
 RUN_ID=bsl
 #
 ##

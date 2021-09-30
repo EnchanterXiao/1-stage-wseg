@@ -1,9 +1,9 @@
-from BaselineCAM import *
-from SoftMaxAE import *
-from CAM_SA import *
-from CAM_CASA import *
-from CAM_SA_WGAP import *
-from CAM_CASA_WGAP import *
+from .BaselineCAM import *
+from .SoftMaxAE import *
+from .CAM_SA import *
+from .CAM_CASA import *
+from .CAM_SA_WGAP import *
+from .CAM_CASA_WGAP import *
 
 #
 # Dynamic change of the base class
