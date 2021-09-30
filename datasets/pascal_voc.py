@@ -176,7 +176,7 @@ class VOCSegmentation(PascalVOC):
             score = np.load(self.scores[index])
         else:
             score = np.zeros_like(mask)
-        score = Image.fromarray(score)
+        score = Image.fromarrgitay(score)
         unique_labels = np.unique(mask)
 
         # ambigious
