@@ -54,8 +54,6 @@ git diff > ${SAVE_DIR}.diff
 echo $CMD > ${SAVE_DIR}.cmd
 
 echo $CMD
-#$CMD
-nohup $CMD
 nohup $CMD > $LOG_FILE 2>&1 &
 
 sleep 1

@@ -258,7 +258,7 @@ def evaluate_all(args):
             else:
                 basename = os.path.basename(files[1])
                 # print(basename)
-                basename = basename.split('.')[0]+'.jpg.png'
+                basename = basename.split('.')[0]+'.png'
                 filepath = os.path.join(args.masks, basename)
                 if not os.path.isfile(filepath):
                     print("File not found: {}".format(filepath))
