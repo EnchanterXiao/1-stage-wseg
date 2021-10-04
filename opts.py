@@ -42,6 +42,10 @@ def add_global_arguments(parser):
 
     parser.add_argument("--random-seed", type=int, default=64, help="Random seed")
 
+    parser.add_argument(
+        '--isattention', type=bool, default=False,
+        help='Is used attention loss')
+
 
 def maybe_create_dir(path):
     if not os.path.exists(path):

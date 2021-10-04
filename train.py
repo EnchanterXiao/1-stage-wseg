@@ -99,10 +99,10 @@ class DecTrainer(BaseTrainer):
         losses = {"loss_cls": loss_cls.item(),
                   "loss_fg": cls_fg.mean().item()}
         loss = loss_cls.clone()
-
         # attention loss
-        if loss_at != None:
-            loss_at = torch.mean(loss_at, dim=0) * weight_attention
+        if args.isattention:
+            # loss_at = torch.mean(loss_at, dim=0) * weight_attention
+            loss_at = loss_at.mean() * weight_attention
             losses.update({"loss_at": loss_at.item()})
             loss += loss_at.clone()
 
