@@ -24,6 +24,6 @@ fi
 echo $CMD
 echo "LOG: $LOG_FILE"
 
-nohup $CMD > $LOG_FILE 2>&1 &
+nohup $CMD > $LOG_FILE 2>&1 #&
 sleep 1
 tail -f $LOG_FILE

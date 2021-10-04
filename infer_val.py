@@ -58,7 +58,6 @@ if __name__ == '__main__':
     # loading the model
     args = get_arguments(sys.argv[1:])
 
-
     # reading the config
     cfg_from_file(args.cfg_file)
     if args.set_cfgs is not None:
@@ -130,12 +129,9 @@ if __name__ == '__main__':
         labels = labels.type_as(masks_pred)
         pool = mp.Pool(processes=args.workers)
         for idx, prospect_thresh in enumerate(prospect_threshs):
-            # writer = WriterClass(cfg.TEST, palette, args.mask_output_dir+'_'+str(prospect_thresh).split('.')[-1],
-            #                      prospect_thresh=prospect_thresh,
-            #                      heatmap=heatmap, scoremap=scoremap)
             # writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
             pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
-            # pool.apply(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+
         pool.close()
         pool.join()
         timer.update_progress(float(iter + 1) / N)
@@ -143,4 +139,6 @@ if __name__ == '__main__':
             msg = "Finish time: {}".format(timer.str_est_finish())
             tqdm.write(msg)
             sys.stdout.flush()
+    # pool.close()
+    # pool.join()
 
