@@ -28,9 +28,8 @@ from models import get_model
 
 from utils.checkpoints import Checkpoint
 from utils.timer import Timer
-from utils.dcrf import crf_inference
 from utils.inference_tools import get_inference_io
-import time
+
 
 def check_dir(base_path, name):
 
@@ -106,39 +105,34 @@ if __name__ == '__main__':
         writers.append(WriterClass(cfg.TEST, palette, args.mask_output_dir + '_' + str(prospect_thresh).split('.')[-1],
                              prospect_thresh=prospect_thresh,
                              heatmap=heatmap, scoremap=scoremap, CRF=crf))
-    for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
-
-        # cutting the masks
-        masks = []
-
-        with torch.no_grad():
-            cls_raw, masks_pred = model(images_in)
-
-            if not cfg.TEST.USE_GT_LABELS:
-                cls_sigmoid = torch.sigmoid(cls_raw)
-                cls_sigmoid, _ = cls_sigmoid.max(0)
-                #cls_sigmoid = cls_sigmoid.mean(0)
-                # threshold class scores
-                labels = (cls_sigmoid > cfg.TEST.FP_CUT_SCORE)
-            else:
-                labels = labels[0]
-
-        # saving the raw npy
-        image = dataset.denorm(img_orig[0]).numpy()
-        masks_pred = masks_pred.cpu()
-        labels = labels.type_as(masks_pred)
         pool = mp.Pool(processes=args.workers)
-        for idx, prospect_thresh in enumerate(prospect_threshs):
-            # writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
-            pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
 
+        for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
+
+            # cutting the masks
+            masks = []
+
+            with torch.no_grad():
+                cls_raw, masks_pred = model(images_in)
+                if cfg.TEST.USE_GT_LABELS:
+                    labels = labels[0]
+                else:
+                    cls_sigmoid = torch.sigmoid(cls_raw)
+                    cls_sigmoid, _ = cls_sigmoid.max(0)
+                    # cls_sigmoid = cls_sigmoid.mean(0)
+                    # threshold class scores
+                    labels = (cls_sigmoid > cfg.TEST.FP_CUT_SCORE)
+
+            # saving the raw npy
+            image = dataset.denorm(img_orig[0]).numpy()
+            masks_pred = masks_pred.cpu()
+            labels = labels.type_as(masks_pred)
+            pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+            timer.update_progress(float(iter + 1) / N)
+            if iter % 100 == 0:
+                msg = "Finish time: {}".format(timer.str_est_finish())
+                tqdm.write(msg)
+                sys.stdout.flush()
         pool.close()
         pool.join()
-        timer.update_progress(float(iter + 1) / N)
-        if iter % 100 == 0:
-            msg = "Finish time: {}".format(timer.str_est_finish())
-            tqdm.write(msg)
-            sys.stdout.flush()
-    # pool.close()
-    # pool.join()
 
