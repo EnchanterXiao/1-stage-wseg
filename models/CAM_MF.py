@@ -76,26 +76,27 @@ def network_CAM_MF(cfg):
             return self._mask_logits
 
         def forward_cls(self, x):
-            return (self.cls_branch_6(x["conv6"]) + self.cls_branch_6(x["conv5"])
-                    + self.cls_branch_6(x["conv4"]) + self.cls_branch_6(x["conv3"]))/4
+            return self.cls_branch_6(x["conv6"]) + self.cls_branch_6(x["conv5"]) + \
+                   self.cls_branch_6(x["conv4"]) + self.cls_branch_6(x["conv3"])
 
         def forward_mask(self, x, size):
             logits_6 = self.fc8_6(x["conv6"])
-            masks = F.interpolate(logits_6, size=size, mode='bilinear', align_corners=True)
-            masks = F.relu(masks)
+            masks_6 = F.interpolate(logits_6, size=size, mode='bilinear', align_corners=True)
+            masks_6 = F.relu(masks_6)
 
             logits_5 = self.fc8_6(x["conv5"])
-            masks = F.interpolate(logits_5, size=size, mode='bilinear', align_corners=True)
-            masks += F.relu(masks)
+            masks_5 = F.interpolate(logits_5, size=size, mode='bilinear', align_corners=True)
+            masks_5 += F.relu(masks_5)
 
             logits_4 = self.fc8_6(x["conv4"])
-            masks = F.interpolate(logits_4, size=size, mode='bilinear', align_corners=True)
-            masks += F.relu(masks)
+            masks_4 = F.interpolate(logits_4, size=size, mode='bilinear', align_corners=True)
+            masks_4 += F.relu(masks_4)
 
             logits_3 = self.fc8_6(x["conv3"])
-            masks = F.interpolate(logits_3, size=size, mode='bilinear', align_corners=True)
-            masks += F.relu(masks)
+            masks_3 = F.interpolate(logits_3, size=size, mode='bilinear', align_corners=True)
+            masks_3 += F.relu(masks_3)
 
+            masks = (masks_6+masks_5+masks_4+masks_3)/4
             # CAMs are unbounded
             # so let's normalised it first
             # (see jiwoon-ahn/psa)
