@@ -75,8 +75,8 @@ def network_CAM_MF(cfg):
             return self._mask_logits
 
         def forward_cls(self, x):
-            return self.cls_branch_6(x["conv6"]) + self.cls_branch_6(x["conv5"]) + \
-                   self.cls_branch_6(x["conv4"]) + self.cls_branch_6(x["conv3"])
+            return self.cls_branch_6(x["conv6"]) + self.cls_branch_5(x["conv5"]) + \
+                   self.cls_branch_4(x["conv4"]) + self.cls_branch_3(x["conv3"])
 
         def forward_mask(self, x, size):
             logits_6 = self.fc8_6(x["conv6"])
