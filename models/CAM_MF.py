@@ -44,7 +44,6 @@ def network_CAM_MF(cfg):
             nn.init.xavier_uniform_(self.fc8_4.weight)
             nn.init.xavier_uniform_(self.fc8_3.weight)
 
-
             cls_modules_6 = [nn.AdaptiveAvgPool2d((1, 1)), self.fc8_6, Flatten()]
             cls_modules_5 = [nn.AdaptiveAvgPool2d((1, 1)), self.fc8_5, Flatten()]
             cls_modules_4 = [nn.AdaptiveAvgPool2d((1, 1)), self.fc8_4, Flatten()]
@@ -65,7 +64,7 @@ def network_CAM_MF(cfg):
             self.mask_branch_4 = nn.Sequential(self.fc8_4, nn.ReLU())
             self.mask_branch_3 = nn.Sequential(self.fc8_3, nn.ReLU())
 
-            self.from_scratch_layers = [self.fc8]
+            # self.from_scratch_layers = [self.fc8]
             self._init_weights(pre_weights)
             self._mask_logits = None
 
