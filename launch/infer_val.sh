@@ -11,11 +11,11 @@ FILELIST=../1sw/data/val_voc.txt
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v0930
-RUN_ID=bsl
-SNAPSHOT=e014Xs0.945
+EXP=v1004
+RUN_ID=cam_casa
+SNAPSHOT=e019Xs0.925
 EXTRA_ARGS=
-SAVE_ID=bsl
+SAVE_ID=cam_casa
 #
 ##
 
@@ -42,12 +42,12 @@ CMD="python infer_val.py --dataset $DATASET \
                          --mask-output-dir $SAVE_DIR \
                          $EXTRA_ARGS"
 
-#if [ ! -d $SAVE_DIR ]; then
-#  echo "Creating directory: $SAVE_DIR"
-#  mkdir -p $SAVE_DIR
-#else
-#  echo "Saving to: $SAVE_DIR"
-#fi
+if [ ! -d $SAVE_DIR ]; then
+  echo "Creating directory: $SAVE_DIR"
+  mkdir -p $SAVE_DIR
+else
+  echo "Saving to: $SAVE_DIR"
+fi
 
 git rev-parse HEAD > ${SAVE_DIR}.head
 git diff > ${SAVE_DIR}.diff
