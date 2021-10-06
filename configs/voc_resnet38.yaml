@@ -13,7 +13,7 @@ TRAIN:
   PRETRAIN: 5
 NET:
   BACKBONE: "resnet38"
-  MODEL: "CAM_CASA"
+  MODEL: "CAM_MF"
   PRE_WEIGHTS_PATH: "../1sw/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.pth"
   LR: 0.001
   OPT: "SGD"

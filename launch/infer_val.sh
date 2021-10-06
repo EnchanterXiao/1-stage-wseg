@@ -11,11 +11,11 @@ FILELIST=../1sw/data/val_voc.txt
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1004
-RUN_ID=cam_casa
-SNAPSHOT=e019Xs0.925
+EXP=v1005
+RUN_ID=cam_mf
+SNAPSHOT=e018Xs0.944
 EXTRA_ARGS=
-SAVE_ID=cam_casa
+SAVE_ID=cam_mf
 #
 ##
 

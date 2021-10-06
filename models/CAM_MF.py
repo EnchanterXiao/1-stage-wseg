@@ -83,15 +83,15 @@ def network_CAM_MF(cfg):
             masks_6 = F.interpolate(logits_6, size=size, mode='bilinear', align_corners=True)
             masks_6 = F.relu(masks_6)
 
-            logits_5 = self.fc8_6(x["conv5"])
+            logits_5 = self.fc8_5(x["conv5"])
             masks_5 = F.interpolate(logits_5, size=size, mode='bilinear', align_corners=True)
             masks_5 += F.relu(masks_5)
 
-            logits_4 = self.fc8_6(x["conv4"])
+            logits_4 = self.fc8_4(x["conv4"])
             masks_4 = F.interpolate(logits_4, size=size, mode='bilinear', align_corners=True)
             masks_4 += F.relu(masks_4)
 
-            logits_3 = self.fc8_6(x["conv3"])
+            logits_3 = self.fc8_3(x["conv3"])
             masks_3 = F.interpolate(logits_3, size=size, mode='bilinear', align_corners=True)
             masks_3 += F.relu(masks_3)
 
