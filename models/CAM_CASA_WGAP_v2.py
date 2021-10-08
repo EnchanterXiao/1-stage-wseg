@@ -77,36 +77,6 @@ def network_CAM_CASA_WGAP_v2(cfg):
             self._mask_logits = super().forward(x)
             return self._mask_logits
 
-        def forward_cls(self, x):
-            x = self.cls_branch(x) # bs*20*h*w
-            bs, c, h, w = x.size()
-            bg = torch.ones_like(x[:, :1])
-            y = torch.cat([self.cfg.BG_SCORE * bg, x], 1) # bs*21*h8w
-            attention = F.softmax(torch.reshape(y, [-1, self.num_classes, h*w]), dim=-1) # bs*21*hw
-            x = torch.reshape(x, (bs, c, h*w))
-            cls_vec = torch.mul(x, attention[:, 1:])
-            cls_vec = torch.sum(cls_vec, dim=-1)
-            cls_vec = torch.reshape(cls_vec, (bs, c, 1, 1))
-            return cls_vec
-
-        def forward_mask(self, x, size):
-            logits = self.fc8(x)
-            masks = F.interpolate(logits, size=size, mode='bilinear', align_corners=True)
-            masks = F.relu(masks)
-
-            # CAMs are unbounded
-            b, c, h, w = masks.size()
-            masks_ = masks.view(b, c, -1)
-            z, _ = masks_.max(-1, keepdim=True)
-            masks_ /= (1e-5 + z)
-            masks = masks.view(b, c, h, w)
-
-            bg = torch.ones_like(masks[:, :1])
-            masks = torch.cat([self.cfg.BG_SCORE * bg, masks], 1)
-
-            # note, that the masks contain the background as the first channel
-            return logits, masks
-
         def forward(self, y, _=None, labels=None):
             test_mode = labels is None
 
@@ -140,11 +110,9 @@ def network_CAM_CASA_WGAP_v2(cfg):
             # adding the losses together
             cls = cls_1[:, 1:] + cls_2[:, 1:]
 
-            logits, masks = self.forward_mask(x, y.size()[-2:])
             if test_mode:
-                # if in test mode, not mask
-                # cleaning is performed
                 return cls, rescale_as(masks, y)
+
             # foreground stats
             b, c, h, w = masks.size()
             masks_ = masks.view(b, c, -1)
@@ -153,10 +121,10 @@ def network_CAM_CASA_WGAP_v2(cfg):
 
             # upscale the masks & clean
             masks = self._rescale_and_clean(masks, y, labels)
-
+            mask_logits = x
             # attention loss
             # loss_at = torch.sum(attention_map.pow(2), dim=-1)
-            return cls, cls_fg, {"cam": masks}, logits, None, None, None
+            return cls, cls_fg, {"cam": masks}, mask_logits, None, None, None
 
         def _rescale_and_clean(self, masks, image, labels):
             masks = F.interpolate(masks, size=image.size()[-2:], mode='bilinear', align_corners=True)
