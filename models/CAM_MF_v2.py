@@ -35,7 +35,7 @@ def network_CAM_MF_v2(cfg):
 
             self.cfg = config
 
-            self.fc8 = nn.Conv2d(self.fan_out()+1024+512+256, num_classes - 1, 1, bias=False)
+            self.fc8 = nn.Conv2d(self.fan_out()+512+256, num_classes - 1, 1, bias=False)
             nn.init.xavier_uniform_(self.fc8.weight)
 
             cls_modules = [nn.AdaptiveAvgPool2d((1, 1)), self.fc8, Flatten()]
@@ -44,7 +44,7 @@ def network_CAM_MF_v2(cfg):
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
             self.cls_branch = nn.Sequential(*cls_modules)
-            self.mask_branch = nn.Sequential(self.fc8_6, nn.ReLU())
+            self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
 
             self.from_scratch_layers = [self.fc8]
             self._init_weights(pre_weights)
@@ -60,13 +60,13 @@ def network_CAM_MF_v2(cfg):
             return self.cls_branch(x)
 
         def forward_mask(self, x, size):
-            logits = self.fc8(x["conv6"])
+            logits = self.fc8(x)
             masks = F.interpolate(logits, size=size, mode='bilinear', align_corners=True)
             masks = F.relu(masks)
             # CAMs are unbounded
             # so let's normalised it first
             # (see jiwoon-ahn/psa)
-            b,c,h,w = masks.size()
+            b, c, h, w = masks.size()
             masks_ = masks.view(b,c,-1)
             z, _ = masks_.max(-1, keepdim=True)
             masks_ /= (1e-5 + z)
@@ -85,9 +85,10 @@ def network_CAM_MF_v2(cfg):
             x3 = x["conv3"]
             x4 = x["conv4"]
             x6 = x["conv6"]
-            x4 = F.interpolate(x4, x3.size()[2:], mode='bilinear', align_corners=True)
-            x6 = F.interpolate(x6, x3.size()[2:], mode='bilinear', align_corners=True)
-            x = torch.stack([x3, x4, x6], dim=1)
+            x3 = F.adaptive_max_pool2d(x3, x6.size()[2:])
+            # x4 = F.interpolate(x4, x3.size()[2:], mode='bilinear', align_corners=True)
+            # x6 = F.interpolate(x6, x3.size()[2:], mode='bilinear', align_corners=True)
+            x = torch.cat((x3, x4, x6), dim=1)
 
             cls = self.forward_cls(x)
             logits, masks = self.forward_mask(x, y.size()[-2:])
