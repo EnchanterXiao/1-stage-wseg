@@ -19,6 +19,14 @@ class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
 
+def focal_loss(x, p=1, c=0.1):
+    return torch.pow(1 - x, p) * torch.log(c + x)
+
+def rescale_as(x, y, mode="bilinear", align_corners=True):
+    h, w = y.size()[2:]
+    x = F.interpolate(x, size=[h, w], mode=mode, align_corners=align_corners)
+    return x
+
 def network_CAM_CASA_WGAP_v2(cfg):
     if cfg.BACKBONE == "resnet38":
         print("Backbone: ResNet38")
@@ -110,12 +118,33 @@ def network_CAM_CASA_WGAP_v2(cfg):
 
             x = torch.mul(x, Spatial_weight)
 
-            cls = self.forward_cls(x)
+            x = self.cls_branch(x)
+            # constant BG scores
+            bg = torch.ones_like(x[:, :1])
+            x = torch.cat([bg, x], 1)
+
+            bs, c, h, w = x.size()
+            masks = F.softmax(x, dim=1)
+            # reshaping
+            features = x.view(bs, c, -1)
+            masks_ = masks.view(bs, c, -1)
+
+            # classification loss
+            cls_1 = (features * masks_).sum(-1) / (1.0 + masks_.sum(-1))
+
+            # focal penalty loss
+            cls_2 = focal_loss(masks_.mean(-1), \
+                               p=self.cfg.FOCAL_P, \
+                               c=self.cfg.FOCAL_LAMBDA)
+
+            # adding the losses together
+            cls = cls_1[:, 1:] + cls_2[:, 1:]
+
             logits, masks = self.forward_mask(x, y.size()[-2:])
-
             if test_mode:
-                return cls, masks
-
+                # if in test mode, not mask
+                # cleaning is performed
+                return cls, rescale_as(masks, y)
             # foreground stats
             b, c, h, w = masks.size()
             masks_ = masks.view(b, c, -1)
@@ -126,9 +155,8 @@ def network_CAM_CASA_WGAP_v2(cfg):
             masks = self._rescale_and_clean(masks, y, labels)
 
             # attention loss
-            loss_at = torch.sum(attention_map.pow(2), dim=-1)
-
-            return cls, cls_fg, {"cam": masks}, logits, None, None, loss_at
+            # loss_at = torch.sum(attention_map.pow(2), dim=-1)
+            return cls, cls_fg, {"cam": masks}, logits, None, None, None
 
         def _rescale_and_clean(self, masks, image, labels):
             masks = F.interpolate(masks, size=image.size()[-2:], mode='bilinear', align_corners=True)
