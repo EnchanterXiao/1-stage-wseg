@@ -49,10 +49,11 @@ if __name__ == '__main__':
     # scoremaps = [False]
     # CRFs = [False]
 
-    prospect_threshs = [0.1, 0.3, 0.5, 0.7]
-    heatmaps = [False, False, False, False, False]
-    scoremaps = [False, False, False, False, False]
-    CRFs = [False, False, False, False, False]
+    test_id = [0, 1, 2, 3, 4]
+    prospect_threshs = [0.0, 0.1, 0.3, 0.5, 0.7]
+    heatmaps = [False, False, False, False, False, False]
+    scoremaps = [False, False, False, False, False, False]
+    CRFs = [False, False, False, False, False, False]
 
     # loading the model
     args = get_arguments(sys.argv[1:])
@@ -102,6 +103,8 @@ if __name__ == '__main__':
     palette = dataset.get_palette()
     writers = []
     for idx, (prospect_thresh, heatmap, scoremap, crf) in enumerate(zip(prospect_threshs, heatmaps, scoremaps, CRFs)):
+        if idx not in test_id:
+            continue
         writers.append(WriterClass(cfg.TEST, palette, args.mask_output_dir + '_' + str(prospect_thresh).split('.')[-1],
                              prospect_thresh=prospect_thresh,
                              heatmap=heatmap, scoremap=scoremap, CRF=crf))
