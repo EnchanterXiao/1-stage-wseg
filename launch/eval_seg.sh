@@ -6,8 +6,9 @@ FILELIST=../1sw/data/val_voc.txt # validation
 ## You values here:
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1007
-RUN_ID=cam_casa
+EXP=v0917
+RUN_ID=ae
+Thresh0=_0
 Thresh1=_1
 Thresh3=_3
 Thresh5=_5
@@ -18,6 +19,9 @@ Thresh7=_7
 LISTNAME=`basename $FILELIST .txt`
 
 # without CRF
+SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh0/no_crf
+nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+
 SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh1/no_crf
 nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
 

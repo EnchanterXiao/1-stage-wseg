@@ -11,7 +11,7 @@ class _ASPPModule(nn.Module):
         self.bn = BatchNorm(planes)
         self.relu = nn.ReLU()
 
-        self._init_weight()
+        # self._init_weight()
 
     def forward(self, x):
         x = self.atrous_conv(x)
