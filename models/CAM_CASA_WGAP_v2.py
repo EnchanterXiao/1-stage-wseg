@@ -123,8 +123,8 @@ def network_CAM_CASA_WGAP_v2(cfg):
             masks = self._rescale_and_clean(masks, y, labels)
             mask_logits = x
             # attention loss
-            # loss_at = torch.sum(attention_map.pow(2), dim=-1)
-            return cls, cls_fg, {"cam": masks}, mask_logits, None, None, None
+            loss_at = torch.sum(attention_map.pow(2), dim=-1)
+            return cls, cls_fg, {"cam": masks}, mask_logits, None, None, loss_at
 
         def _rescale_and_clean(self, masks, image, labels):
             masks = F.interpolate(masks, size=image.size()[-2:], mode='bilinear', align_corners=True)
