@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # scoremaps = [False]
     # CRFs = [False]
 
-    test_id = [0]
+    test_id = [0, 1, 2, 3, 4]
     prospect_threshs = [0.0, 0.1, 0.3, 0.5, 0.7]
     heatmaps = [False, False, False, False, False, False]
     scoremaps = [False, False, False, False, False, False]
