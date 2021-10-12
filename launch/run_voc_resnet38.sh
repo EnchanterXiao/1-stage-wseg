@@ -3,8 +3,8 @@
 ## Your values here:
 #
 DS=pascal_voc
-EXP=v1009
-RUN_ID=cam_casa_wgap_v2
+EXP=v1011
+RUN_ID=cam_wgap_v3
 #
 ##
 
@@ -13,8 +13,8 @@ RUN_ID=cam_casa_wgap_v2
 #
 
 LOG_DIR=../1sw/logs/${DS}/${EXP}
-#CMD="python train.py --dataset $DS --cfg configs/voc_resnet38.yaml --exp $EXP --run $RUN_ID"
-CMD="python train.py --dataset $DS --cfg configs/voc_resnet38.yaml --exp $EXP --run $RUN_ID --isattention True"
+CMD="python train.py --dataset $DS --cfg configs/voc_resnet38.yaml --exp $EXP --run $RUN_ID"
+#CMD="python train.py --dataset $DS --cfg configs/voc_resnet38.yaml --exp $EXP --run $RUN_ID --isattention True"
 LOG_FILE=$LOG_DIR/${RUN_ID}.log
 
 if [ ! -d "$LOG_DIR" ]; then
