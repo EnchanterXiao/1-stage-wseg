@@ -265,9 +265,10 @@ class DecTrainer(BaseTrainer):
         preds_stacked = np.vstack(preds_all)
         aps = average_precision_score(targets_stacked, preds_stacked, average=None)
 
+        offset = 0
         # skip BG AP
-        offset = self.nclass - aps.size
-        assert offset == 1, 'Class number mismatch'
+        # offset = self.nclass - aps.size
+        # assert offset == 1, 'Class number mismatch'
 
         classNames = self.classNames[offset:]
         for ni, className in enumerate(classNames):

@@ -115,10 +115,10 @@ def network_CAM_CASA_WGAP_v4(cfg):
             b, c, h, w = masks.size()
             masks_ = masks.view(b, c, -1)
             masks_ = masks_[:, 1:]
-            cls_fg = (masks_.mean(-1) * labels).sum(-1) / labels.sum(-1)
+            cls_fg = (masks_.mean(-1) * labels[:, 1:]).sum(-1) / labels[:, 1:].sum(-1)
 
             # upscale the masks & clean
-            masks = self._rescale_and_clean(masks, y, labels)
+            masks = self._rescale_and_clean(masks, y, labels[:, 1:])
             mask_logits = x
             # attention loss
             loss_at = torch.sum(attention_map.pow(2), dim=-1)
