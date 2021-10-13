@@ -42,8 +42,8 @@ def rescale_as(x, y, mode="bilinear", align_corners=True):
 
 MIN_PROB = 1e-4
 def crf_layer(output, images):
-    unary = np.transpose(np.array(output.cpu().clone().data), [0, 2, 3, 1])
-    im = images.cpu().data
+    unary =np.array(output.cpu().clone().data)
+    im = images.cpu().data.numpy()
 
     # converting original image to [0, 255]
     img_orig255 = np.round(255. * im).astype(np.uint8)
@@ -53,14 +53,19 @@ def crf_layer(output, images):
     result = np.zeros(unary.shape)
 
     for i in range(N):
-        result[i] = crf_inference(img_orig255[i], output[i], t=10, scale_factor=1, labels=21)
-    result = np.transpose(result, [0, 3, 1, 2])
+        # print(img_orig255[i].shape)
+        # print(unary[i].shape)
+        result[i] = crf_inference(img_orig255[i], unary[i], t=10, scale_factor=1, labels=21)
+        # print(result[i].shape)
+    # result = np.transpose(result, [0, 3, 1, 2])
     result[result < MIN_PROB] = MIN_PROB
-    result = result / np.sum(result, axis=1, keepdims=True)
-    return np.log(result)
+    # result = result / np.sum(result, axis=1, keepdims=True)
+    # return np.log(result)
+    return result
 
 def constrain_loss_layer(probs, probs_smooth_log):
-    probs_smooth = torch.exp(probs.new_tensor(probs_smooth_log, requires_grad=True))
+    # probs_smooth = torch.exp(probs.new_tensor(probs_smooth_log, requires_grad=True))
+    probs_smooth = probs.new_tensor(probs_smooth_log, requires_grad=True)
     loss = torch.mean(torch.sum(probs_smooth * torch.log(probs_smooth / probs), dim=1))
 
     return loss
@@ -130,10 +135,11 @@ class DecTrainer(BaseTrainer):
             losses.update({"loss_at": loss_at.item()})
             loss += loss_at.clone()
 
-        crf_pred = crf_layer(mask_logits, image_raw)
-        constrain_loss = constrain_loss_layer(pseudo_gt, crf_pred)
-        losses.update({"loss_constrain": constrain_loss.item()})
-        loss += constrain_loss.clone()
+        if epoch >= 10 and train == True:
+            crf_pred = crf_layer(pseudo_gt, image_raw)
+            constrain_loss = constrain_loss_layer(pseudo_gt, crf_pred)
+            losses.update({"loss_constrain": constrain_loss.item()})
+            loss += constrain_loss.clone()
 
         if "dec" in masks:
             loss_mask = loss_mask.mean()
@@ -369,8 +375,9 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             if epoch == 0:
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=False)
+                # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                #           checkpoint=False)
+                pass
             else:
                 time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
                           checkpoint=True)
