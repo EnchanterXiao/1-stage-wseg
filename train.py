@@ -22,7 +22,7 @@ from losses import get_criterion, mask_loss_ce
 
 from utils.timer import Timer
 from utils.stat_manager import StatManager
-from utils.metrics import compute_jaccard
+from utils.dcrf import crf_inference
 
 # specific to pytorch-v1 cuda-9.0
 # see: https://github.com/pytorch/pytorch/issues/15054#issuecomment-450191923
@@ -39,6 +39,31 @@ def rescale_as(x, y, mode="bilinear", align_corners=True):
     x = F.interpolate(x, size=[h, w], mode=mode, align_corners=align_corners)
     return x
 
+
+MIN_PROB = 1e-4
+def crf_layer(output, images):
+    unary = np.transpose(np.array(output.cpu().clone().data), [0, 2, 3, 1])
+    im = images.cpu().data
+
+    # converting original image to [0, 255]
+    img_orig255 = np.round(255. * im).astype(np.uint8)
+    img_orig255 = np.transpose(img_orig255, [0, 2, 3, 1])
+    img_orig255 = np.ascontiguousarray(img_orig255)
+    N = unary.shape[0]
+    result = np.zeros(unary.shape)
+
+    for i in range(N):
+        result[i] = crf_inference(img_orig255[i], output[i], t=10, scale_factor=1, labels=21)
+    result = np.transpose(result, [0, 3, 1, 2])
+    result[result < MIN_PROB] = MIN_PROB
+    result = result / np.sum(result, axis=1, keepdims=True)
+    return np.log(result)
+
+def constrain_loss_layer(probs, probs_smooth_log):
+    probs_smooth = torch.exp(probs.new_tensor(probs_smooth_log, requires_grad=True))
+    loss = torch.mean(torch.sum(probs_smooth * torch.log(probs_smooth / probs), dim=1))
+
+    return loss
 
 class DecTrainer(BaseTrainer):
 
@@ -91,7 +116,6 @@ class DecTrainer(BaseTrainer):
         # classification
         cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask, loss_at = self.enc(image, image_raw, gt_labels)
 
-
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
 
@@ -105,6 +129,11 @@ class DecTrainer(BaseTrainer):
             loss_at = loss_at.mean() * weight_attention
             losses.update({"loss_at": loss_at.item()})
             loss += loss_at.clone()
+
+        crf_pred = crf_layer(mask_logits, image_raw)
+        constrain_loss = constrain_loss_layer(pseudo_gt, crf_pred)
+        losses.update({"loss_constrain": constrain_loss.item()})
+        loss += constrain_loss.clone()
 
         if "dec" in masks:
             loss_mask = loss_mask.mean()
