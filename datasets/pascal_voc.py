@@ -184,17 +184,17 @@ class VOCSegmentation(PascalVOC):
             unique_labels = unique_labels[:-1]
 
         # ignoring BG
-        # labels = torch.zeros(self.NUM_CLASS - 1)
-        # if unique_labels[0] == self.CLASS_IDX['background']:
-        #     unique_labels = unique_labels[1:]
-        # unique_labels -= 1  # shifting since no BG class
+        labels = torch.zeros(self.NUM_CLASS - 1)
+        if unique_labels[0] == self.CLASS_IDX['background']:
+            unique_labels = unique_labels[1:]
+        unique_labels -= 1  # shifting since no BG class
 
         #have BG
-        labels = torch.zeros(self.NUM_CLASS)
+        # labels = torch.zeros(self.NUM_CLASS)
 
-        # assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
-        while (unique_labels.size > 0 and unique_labels[-1] >= self.NUM_CLASS):
-        # while(unique_labels.size > 0 and unique_labels[-1] >= self.NUM_CLASS - 1):
+        assert unique_labels.size > 0, 'No labels found in %s' % self.masks[index]
+        # while (unique_labels.size > 0 and unique_labels[-1] >= self.NUM_CLASS):
+        while(unique_labels.size > 0 and unique_labels[-1] >= self.NUM_CLASS - 1):
             unique_labels = unique_labels[:-1]
         labels[unique_labels.tolist()] = 1
 
