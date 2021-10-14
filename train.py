@@ -135,11 +135,11 @@ class DecTrainer(BaseTrainer):
             losses.update({"loss_at": loss_at.item()})
             loss += loss_at.clone()
 
-        if epoch >= 10 and train == True:
-            crf_pred = crf_layer(pseudo_gt, image_raw)
-            constrain_loss = constrain_loss_layer(pseudo_gt, crf_pred)
-            losses.update({"loss_constrain": constrain_loss.item()})
-            loss += constrain_loss.clone()
+        # if epoch >= 10 and train == True:
+        #     crf_pred = crf_layer(pseudo_gt, image_raw)
+        #     constrain_loss = constrain_loss_layer(pseudo_gt, crf_pred)
+        #     losses.update({"loss_constrain": constrain_loss.item()})
+        #     loss += constrain_loss.clone()
 
         if "dec" in masks:
             loss_mask = loss_mask.mean()
