@@ -5,17 +5,17 @@
 #
 CONFIG=configs/voc_resnet38.yaml
 DATASET=pascal_voc
-FILELIST=../1sw/data/val_voc.txt
-#FILELIST=../1sw/data/train_augvoc.txt
+#FILELIST=../1sw/data/val_voc.txt
+FILELIST=../1sw/data/train_augvoc.txt
 
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1012
-RUN_ID=cam_casa_wgap_v4
-SNAPSHOT=e012Xs0.947
+EXP=v1013
+RUN_ID=cam_casa_wgap_v5
+SNAPSHOT=e015Xs0.904
 EXTRA_ARGS=
-SAVE_ID=cam_casa_wgap_v4
+SAVE_ID=cam_casa_wgap_v5
 #
 ##
 
