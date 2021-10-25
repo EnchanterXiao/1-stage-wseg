@@ -70,6 +70,31 @@ def check_global_arguments(args):
     maybe_create_dir(args.snapshot_dir)
     #print("Saving snapshots in: {}".format(args.snapshot_dir))
 
+def add_cam_args(parser):
+    # parser = argparse.ArgumentParser()
+    parser.add_argument('--use-cuda', action='store_true', default=False,
+                        help='Use NVIDIA GPU acceleration')
+    parser.add_argument(
+        '--image-path',
+        type=str,
+        default='./examples/both.png',
+        help='Input image path')
+    parser.add_argument('--aug_smooth', action='store_true',
+                        help='Apply test time augmentation to smooth the CAM')
+    parser.add_argument(
+        '--eigen_smooth',
+        action='store_true',
+        help='Reduce noise by taking the first principle componenet'
+        'of cam_weights*activations')
+    parser.add_argument('--method', type=str, default='gradcam',
+                        choices=['gradcam', 'gradcam++',
+                                 'scorecam', 'xgradcam',
+                                 'ablationcam', 'eigencam',
+                                 'eigengradcam', 'layercam', 'fullgrad'],
+                        help='Can be gradcam/gradcam++/scorecam/xgradcam'
+                             '/ablationcam/eigencam/eigengradcam/layercam')
+
+    # return args
 
 def get_arguments(args_in):
     """Parse all the arguments provided from the CLI.
@@ -79,6 +104,21 @@ def get_arguments(args_in):
     """
     parser = argparse.ArgumentParser(description="Model Evaluation")
     add_global_arguments(parser)
+    args = parser.parse_args(args_in)
+    check_global_arguments(args)
+
+    return args
+
+
+def get_cam_arguments(args_in):
+    """Parse all the arguments provided from the CLI.
+
+    Returns:
+      A list of parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="Model Evaluation")
+    add_global_arguments(parser)
+    add_cam_args(parser)
     args = parser.parse_args(args_in)
     check_global_arguments(args)
 

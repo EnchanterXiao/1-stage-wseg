@@ -17,39 +17,14 @@ from pytorch_grad_cam.utils.image import show_cam_on_image, \
     deprocess_image, \
     preprocess_image
 
+import sys
+from core.config import cfg, cfg_from_file, cfg_from_list
+from models import get_model
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--use-cuda', action='store_true', default=False,
-                        help='Use NVIDIA GPU acceleration')
-    parser.add_argument(
-        '--image-path',
-        type=str,
-        default='./examples/both.png',
-        help='Input image path')
-    parser.add_argument('--aug_smooth', action='store_true',
-                        help='Apply test time augmentation to smooth the CAM')
-    parser.add_argument(
-        '--eigen_smooth',
-        action='store_true',
-        help='Reduce noise by taking the first principle componenet'
-        'of cam_weights*activations')
-    parser.add_argument('--method', type=str, default='gradcam',
-                        choices=['gradcam', 'gradcam++',
-                                 'scorecam', 'xgradcam',
-                                 'ablationcam', 'eigencam',
-                                 'eigengradcam', 'layercam', 'fullgrad'],
-                        help='Can be gradcam/gradcam++/scorecam/xgradcam'
-                             '/ablationcam/eigencam/eigengradcam/layercam')
+from utils.checkpoints import Checkpoint
+from opts import get_cam_arguments
 
-    args = parser.parse_args()
-    args.use_cuda = args.use_cuda and torch.cuda.is_available()
-    if args.use_cuda:
-        print('Using GPU for acceleration')
-    else:
-        print('Using CPU for computation')
 
-    return args
 
 
 if __name__ == '__main__':
@@ -59,8 +34,13 @@ if __name__ == '__main__':
         2. Guided Back Propagation
         3. Combining both
     """
+    # loading the model
+    args = get_cam_arguments(sys.argv[1:])
+    # reading the config
+    cfg_from_file(args.cfg_file)
+    if args.set_cfgs is not None:
+        cfg_from_list(args.set_cfgs)
 
-    args = get_args()
     methods = \
         {"gradcam": GradCAM,
          "scorecam": ScoreCAM,
@@ -73,6 +53,16 @@ if __name__ == '__main__':
          "fullgrad": FullGrad}
 
     model = models.resnet50(pretrained=True)
+    target_layers = [model.layer4[-1]]
+
+    # Loading the model
+    # model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
+    # checkpoint = Checkpoint(args.snapshot_dir, max_n=5)
+    # checkpoint.add_model('enc', model)
+    # checkpoint.load(args.resume)
+    # target_layers = [model.bn7]
+    #
+    print(model)
 
     # Choose the target layer you want to compute the visualization for.
     # Usually this will be the last convolutional layer in the model.
@@ -86,7 +76,7 @@ if __name__ == '__main__':
     # You can also try selecting all layers of a certain type, with e.g:
     # from pytorch_grad_cam.utils.find_layers import find_layer_types_recursive
     # find_layer_types_recursive(model, [torch.nn.ReLU])
-    target_layers = [model.layer4[-1]]
+
 
     rgb_img = cv2.imread(args.image_path, 1)[:, :, ::-1]
     rgb_img = np.float32(rgb_img) / 255
