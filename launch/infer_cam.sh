@@ -5,8 +5,8 @@
 #
 CONFIG=configs/voc_resnet38.yaml
 DATASET=pascal_voc
-#FILELIST=../1sw/data/val_voc.txt
-FILELIST=../1sw/data/train_augvoc.txt
+FILELIST=../1sw/data/val_voc.txt
+#FILELIST=../1sw/data/train_augvoc.txt
 
 ## You values here (see below how they're used)
 #
@@ -15,7 +15,7 @@ EXP=v1013
 RUN_ID=cam_casa_wgap_v5
 SNAPSHOT=e015Xs0.904
 EXTRA_ARGS=
-SAVE_ID=cam_casa_wgap_v5
+SAVE_ID=cam_casa_wgap_v5_grad_cam
 #
 ##
 
@@ -32,7 +32,7 @@ LISTNAME=`basename $FILELIST .txt`
 SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$SAVE_ID/$LISTNAME
 LOG_FILE=$OUTPUT_DIR/$DATASET/$EXP/$SAVE_ID/$LISTNAME.log
 
-python cam.py --dataset $DATASET \
+python infer_cam.py --dataset $DATASET \
                          --cfg $CONFIG \
                          --exp $EXP \
                          --run $RUN_ID \
@@ -40,6 +40,21 @@ python cam.py --dataset $DATASET \
                          --infer-list $FILELIST \
                          --workers $NUM_THREADS \
                          --mask-output-dir $SAVE_DIR \
-                         --image-path /home/lwq/sdb1/xiaoxin/data/VOC2012/VOCdevkit/VOC2012/JPEGImages/2007_007881.jpg
                          $EXTRA_ARGS
 
+if [ ! -d $SAVE_DIR ]; then
+  echo "Creating directory: $SAVE_DIR"
+  mkdir -p $SAVE_DIR
+else
+  echo "Saving to: $SAVE_DIR"
+fi
+
+git rev-parse HEAD > ${SAVE_DIR}.head
+git diff > ${SAVE_DIR}.diff
+echo $CMD > ${SAVE_DIR}.cmd
+
+echo $CMD
+nohup $CMD > $LOG_FILE 2>&1 &
+
+sleep 1
+tail -f $LOG_FILE

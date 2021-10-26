@@ -160,6 +160,100 @@ class MergeMultiScale(ResultWriter):
 
         return mean_mask
 
+class MergeSingleScale(ResultWriter):
+    def save(self, img_path, img_orig, all_masks, labels, gt_mask):
+
+        img_name = os.path.basename(img_path).rstrip(".jpg")
+
+        # converting original image to [0, 255]
+        img_orig255 = np.round(255. * img_orig).astype(np.uint8)
+        img_orig255 = np.transpose(img_orig255, [1, 2, 0])
+        img_orig255 = np.ascontiguousarray(img_orig255)
+
+        merged_mask = self._merge_masks(all_masks, labels, img_orig255.shape[:2])
+        if self.heatmap:
+            heat_map = np.max(merged_mask[1:, :, :], axis=0)
+        if self.scoremap:
+            score_map = np.max(merged_mask[1:, :, :], axis=0)
+
+        # CRF
+        if self.CRF:
+            pred_crf = crf_inference(img_orig255, merged_mask, t=10, scale_factor=1, labels=21)
+            index = list(np.where(pred_crf[1:, :, :] < self.prospect_thresh))
+            index[0] += 1
+            pred_crf[tuple(index)] = 0
+            pred_crf = np.argmax(pred_crf, 0)
+
+        index = list(np.where(merged_mask[1:, :, :] < self.prospect_thresh))
+        index[0] += 1
+        merged_mask[tuple(index)] = 0
+        pred = np.argmax(merged_mask, 0)
+        if self.scoremap:
+            index = list(np.where(pred == 0))
+            score_map[tuple(index)] = 1 - score_map[tuple(index)]
+
+        filepath = os.path.join(self.root, "no_crf", img_name + '.png')
+        # print('save', filepath)
+        scipy.misc.imsave(filepath, pred.astype(np.uint8))
+
+        if self.CRF:
+            filepath = os.path.join(self.root, "crf", img_name + '.png')
+            scipy.misc.imsave(filepath, pred_crf.astype(np.uint8))
+
+        if self.verbose:
+            mask_gt = gt_mask.numpy()
+            if self.CRF:
+                masks_all = np.concatenate([pred, pred_crf, mask_gt], 1).astype(np.uint8)
+                images = np.concatenate([img_orig] * 3, 2)
+            else:
+                masks_all = np.concatenate([pred, mask_gt], 1).astype(np.uint8)
+                images = np.concatenate([img_orig] * 2, 2)
+
+            images = np.transpose(images, [1, 2, 0])
+
+            overlay = self._mask_overlay(masks_all, images)
+            filepath = os.path.join(self.root, "vis", img_name + '.png')
+            overlay255 = np.round(overlay * 255.).astype(np.uint8)
+            scipy.misc.imsave(filepath, overlay255)
+
+        if self.heatmap:
+            image = np.transpose(img_orig, [1, 2, 0])
+            heat_map = self._heatmap_overlay(heat_map, image)
+            filepath = os.path.join(self.root, "heatmap", img_name + '.png')
+            heat_map = np.round(heat_map * 255.).astype(np.uint8)
+            scipy.misc.imsave(filepath, heat_map)
+
+        if self.scoremap:
+            np.save(os.path.join(self.root, "scoremap", img_name + '.npy'), score_map)
+
+    def _merge_masks(self, masks, labels, imsize_hw):
+
+        mask_list = []
+        for i, mask in enumerate(masks.split(1, dim=0)):
+
+            # removing the padding
+            mask_cut = mask[0].unsqueeze(0)
+            # normalising the scale
+            mask_cut = F.interpolate(mask_cut, imsize_hw, mode='bilinear', align_corners=False)[0]
+
+            # flipping if necessary
+            if self.cfg.FLIP and i % 2 == 1:
+                mask_cut = torch.flip(mask_cut, (-1, ))
+
+            # getting the max response
+            # print(mask_cut.size())
+            mask_cut[1:, ::] *= labels[:, None, None]
+            # mask_cut[1:, ::] = torch.m(mask_cut[1:, ::], labels[:, ::])
+            mask_list.append(mask_cut)
+
+        mean_mask = sum(mask_list).numpy() / len(mask_list)
+
+        # discounting BG
+        #mean_mask[0, ::] *= 0.5
+        mean_mask[0, ::] = np.power(mean_mask[0, ::], self.cfg.BG_POW)  # 三次方
+
+        return mean_mask
+
 class MergeCrops(ResultWriter):
 
     def _cut(self, x_chw, pads):

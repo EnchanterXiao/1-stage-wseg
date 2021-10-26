@@ -148,6 +148,28 @@ class MultiscaleLoader(VOC12ClsDataset):
 
         return name, img, im_msc, pads, label, mask
 
+class SinglescaleLoader(VOC12ClsDataset):
+
+    def __init__(self, img_list, cfg, transform):
+        super().__init__(img_list, cfg.DATA_ROOT)
+
+        self.transform = transform
+        self.scales = cfg.SCALES
+        self.batch_size = len(self.scales)
+
+        print("Inference batch size: ", self.batch_size)
+        assert self.batch_size == cfg.BATCH_SIZE
+
+    def __getitem__(self, idx):
+        im_idx = idx // self.batch_size
+
+        name, img, label, mask = super().__getitem__(im_idx)
+
+        im_msc = self.transform(img)
+        img = F.to_tensor(self.transform(img))
+
+        return name, img, im_msc, label, mask
+
 
 class CropLoader(VOC12ClsDataset):
 

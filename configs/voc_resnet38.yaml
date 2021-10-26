@@ -28,7 +28,7 @@ TEST:
   DATA_ROOT: "../1sw/data"
   FLIP: False
   BATCH_SIZE: 1 # 4 scales, +1 flip for each
-  PAD_SIZE: [1024, 1024]
+  PAD_SIZE: [1024, 1024] #[1024 1024]
   SCALES: [1] #[1, 0.5, 1.5, 2.0]
   FP_CUT_SCORE: 0.1
   BG_POW: 3  #1 or 3

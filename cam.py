@@ -52,17 +52,18 @@ if __name__ == '__main__':
          "layercam": LayerCAM,
          "fullgrad": FullGrad}
 
-    model = models.resnet50(pretrained=True)
-    target_layers = [model.layer4[-1]]
+
 
     # Loading the model
-    # model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
-    # checkpoint = Checkpoint(args.snapshot_dir, max_n=5)
-    # checkpoint.add_model('enc', model)
-    # checkpoint.load(args.resume)
-    # target_layers = [model.bn7]
+    model = get_model(cfg.NET, num_classes=cfg.TEST.NUM_CLASSES)
+    checkpoint = Checkpoint(args.snapshot_dir, max_n=5)
+    checkpoint.add_model('enc', model)
+    checkpoint.load(args.resume)
+    target_layers = [model.cls_branch[-1]]
     #
-    print(model)
+    # print(model)
+    # model = models.resnet50(pretrained=True)
+    # target_layers = [model.layer4[-1]]
 
     # Choose the target layer you want to compute the visualization for.
     # Usually this will be the last convolutional layer in the model.
@@ -105,7 +106,10 @@ if __name__ == '__main__':
                             eigen_smooth=args.eigen_smooth)
 
         # Here grayscale_cam has only one image in the batch
+        # print(grayscale_cam.shape)
+        # print(grayscale_cam)
         grayscale_cam = grayscale_cam[0, :]
+
 
         cam_image = show_cam_on_image(rgb_img, grayscale_cam, use_rgb=True)
 
@@ -113,12 +117,12 @@ if __name__ == '__main__':
         cam_image = cv2.cvtColor(cam_image, cv2.COLOR_RGB2BGR)
 
     gb_model = GuidedBackpropReLUModel(model=model, use_cuda=args.use_cuda)
-    gb = gb_model(input_tensor, target_category=target_category)
+    # gb = gb_model(input_tensor, target_category=target_category)
 
     cam_mask = cv2.merge([grayscale_cam, grayscale_cam, grayscale_cam])
-    cam_gb = deprocess_image(cam_mask * gb)
-    gb = deprocess_image(gb)
+    # cam_gb = deprocess_image(cam_mask * gb)
+    # gb = deprocess_image(gb)
 
     cv2.imwrite(f'{args.method}_cam.jpg', cam_image)
-    cv2.imwrite(f'{args.method}_gb.jpg', gb)
-    cv2.imwrite(f'{args.method}_cam_gb.jpg', cam_gb)
+    # cv2.imwrite(f'{args.method}_gb.jpg', gb)
+    # cv2.imwrite(f'{args.method}_cam_gb.jpg', cam_gb)

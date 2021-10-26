@@ -14,11 +14,15 @@ class BaseCAM:
                  reshape_transform=None,
                  compute_input_gradient=False,
                  uses_gradients=True):
-        self.model = model.eval()
+
+        self.model = model
+        self.model.eval()
+
         self.target_layers = target_layers
         self.cuda = use_cuda
         if self.cuda:
-            self.model = model.cuda()
+            # self.model.cuda()
+            self.model = self.model.cuda()
         self.reshape_transform = reshape_transform
         self.compute_input_gradient = compute_input_gradient
         self.uses_gradients = uses_gradients
@@ -70,14 +74,25 @@ class BaseCAM:
         if isinstance(target_category, int):
             target_category = [target_category] * input_tensor.size(0)
 
+        if isinstance(output, tuple):
+            output=output[0]
         if target_category is None:
+            # print(output)
+            # print(len(output))
+            # print(output[0].shape, output[1].shape)
+            # print(output.shape)
             target_category = np.argmax(output.cpu().data.numpy(), axis=-1)
         else:
+            # print(target_category)
+            # print(input_tensor.size(0))
             assert(len(target_category) == input_tensor.size(0))
 
         if self.uses_gradients:
             self.model.zero_grad()
+            # print('output:', output.shape)
+            # print(target_category)
             loss = self.get_loss(output, target_category)
+            # print(loss)
             loss.backward(retain_graph=True)
 
         # In most of the saliency attribution papers, the saliency is
