@@ -50,7 +50,6 @@ def pseudo_gtmask(mask, cutoff_top=0.6, cutoff_low=0.2, eps=1e-8):
 
     return pseudo_gt.view(bs, c, h, w)
 
-
 def balanced_mask_loss_ce(mask, pseudo_gt, gt_labels, ignore_index=255):
     """Class-balanced CE loss
     - cancel loss if only one class in pseudo_gt
@@ -87,7 +86,6 @@ def balanced_mask_loss_ce(mask, pseudo_gt, gt_labels, ignore_index=255):
 
     loss = batch_weight * (class_weight * loss).mean(-1)
     return loss
-
 
 def network_CAM_CASA_WGAP_PCM(cfg):
     if cfg.BACKBONE == "resnet38":
@@ -175,8 +173,8 @@ def network_CAM_CASA_WGAP_PCM(cfg):
             f8_4 = F.relu(self.f8_4(d['conv5'].detach()), inplace=True)
             x_s = F.interpolate(y, (h, w), mode='bilinear', align_corners=True)
             f = torch.cat([x_s, f8_3, f8_4], dim=1)
-            cam_rv = self._rescale_and_clean(self.PCM(cam_d_norm, f), y, labels)
-            masks_dec = F.softmax(cam_rv, dim=1)
+            masks_dec = self._rescale_and_clean(self.PCM(cam_d_norm, f), y, labels)
+            # masks_dec = F.softmax(cam_rv, dim=1)
 
 
             masks = F.softmax(x, dim=1)
@@ -214,7 +212,7 @@ def network_CAM_CASA_WGAP_PCM(cfg):
             masks_dec = self._rescale_and_clean(masks_dec, y, labels)
 
             # create pseudo GT
-            pseudo_gt = pseudo_gtmask(masks_dec).detach()
+            pseudo_gt = pseudo_gtmask(masks_dec)#.detach()
             loss_mask = balanced_mask_loss_ce(self._mask_logits, pseudo_gt, labels)
 
             return cls, cls_fg, {"cam": masks, "dec": masks_dec}, self._mask_logits, pseudo_gt, loss_mask, None
