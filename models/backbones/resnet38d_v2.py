@@ -155,9 +155,10 @@ class ResNet38(BaseNet):
         x = self.b3(x)
         x = self.b3_1(x)
         x = self.b3_2(x)
-        conv3 = x
+        # conv3 = x
 
-        x = self.b4(x)
+        # x = self.b4(x)
+        x, conv3 = self.b4(x, get_x_bn_relu=True)
         x = self.b4_1(x)
         x = self.b4_2(x)
         x = self.b4_3(x)
