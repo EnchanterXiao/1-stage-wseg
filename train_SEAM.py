@@ -97,6 +97,7 @@ class DecTrainer(BaseTrainer):
             image2_raw = F.interpolate(image_raw, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
             cls_out2, cls_fg2, masks2, mask_logits2, pseudo_gt2, loss_mask2, loss_at2 = self.enc(image2, image2_raw, gt_labels)
             loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
+            mask_logits = F.interpolate(mask_logits, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
             loss_er = torch.mean(torch.abs(mask_logits[:,1:,:,:]-mask_logits2[:,1:,:,:]))
 
         # keep track of all losses for logging
