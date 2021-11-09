@@ -161,20 +161,6 @@ def network_CAM_CASA_WGAP_PCM(cfg):
 
             x = self.cls_branch(x)
             bs, c, h, w = x.size()
-            with torch.no_grad():
-                cam_d = F.relu(x.detach())
-                cam_d_max = torch.max(cam_d.view(bs, c, -1), dim=-1)[0].view(bs, c, 1, 1) + 1e-5
-                cam_d_norm = F.relu(cam_d - 1e-5) / cam_d_max
-                cam_d_norm[:, 0, :, :] = 1 - torch.max(cam_d_norm[:, 1:, :, :], dim=1)[0]
-                cam_max = torch.max(cam_d_norm[:, 1:, :, :], dim=1, keepdim=True)[0]
-                cam_d_norm[:, 1:, :, :][cam_d_norm[:, 1:, :, :] < cam_max] = 0
-
-            f8_3 = F.relu(self.f8_3(d['conv4'].detach()), inplace=True)
-            f8_4 = F.relu(self.f8_4(d['conv5'].detach()), inplace=True)
-            x_s = F.interpolate(y, (h, w), mode='bilinear', align_corners=True)
-            f = torch.cat([x_s, f8_3, f8_4], dim=1)
-            masks_dec = self._rescale_and_clean(self.PCM(cam_d_norm, f), y, labels)
-            # masks_dec = F.softmax(cam_rv, dim=1)
 
 
             masks = F.softmax(x, dim=1)
@@ -195,6 +181,21 @@ def network_CAM_CASA_WGAP_PCM(cfg):
 
             if test_mode:
                 return cls, rescale_as(masks, y)
+
+            with torch.no_grad():
+                cam_d = F.relu(x.detach())
+                cam_d_max = torch.max(cam_d.view(bs, c, -1), dim=-1)[0].view(bs, c, 1, 1) + 1e-5
+                cam_d_norm = F.relu(cam_d - 1e-5) / cam_d_max
+                cam_d_norm[:, 0, :, :] = 1 - torch.max(cam_d_norm[:, 1:, :, :], dim=1)[0]
+                cam_max = torch.max(cam_d_norm[:, 1:, :, :], dim=1, keepdim=True)[0]
+                cam_d_norm[:, 1:, :, :][cam_d_norm[:, 1:, :, :] < cam_max] = 0
+
+            f8_3 = F.relu(self.f8_3(d['conv4'].detach()), inplace=True)
+            f8_4 = F.relu(self.f8_4(d['conv5'].detach()), inplace=True)
+            x_s = F.interpolate(y, (h, w), mode='bilinear', align_corners=True)
+            f = torch.cat([x_s, f8_3, f8_4], dim=1)
+            masks_dec = self._rescale_and_clean(self.PCM(cam_d_norm, f), y, labels)
+            # masks_dec = F.softmax(cam_rv, dim=1)
 
             self._mask_logits = x
 
