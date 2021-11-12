@@ -44,7 +44,7 @@ class DecTrainer(BaseTrainer):
     def __init__(self, args, **kwargs):
         super(DecTrainer, self).__init__(args, **kwargs)
 
-        self.scale_factor = 0.3
+        self.scale_factor = 0.5
         # dataloader
         self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME)
         self.valloader = get_dataloader(args, cfg, 'val_voc')
@@ -92,19 +92,19 @@ class DecTrainer(BaseTrainer):
         cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask, loss_at = self.enc(image, image_raw, gt_labels)
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
-        if train:
-            image2 = F.interpolate(image, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-            image2_raw = F.interpolate(image_raw, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-            cls_out2, cls_fg2, masks2, mask_logits2, pseudo_gt2, loss_mask2, loss_at2 = self.enc(image2, image2_raw, gt_labels)
-            loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
-            mask_logits = F.interpolate(mask_logits, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-            loss_er = torch.mean(torch.abs(mask_logits[:,1:,:,:]-mask_logits2[:,1:,:,:]))
+        # if train:
+        #     image2 = F.interpolate(image, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+        #     image2_raw = F.interpolate(image_raw, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+        #     cls_out2, cls_fg2, masks2, mask_logits2, pseudo_gt2, loss_mask2, loss_at2 = self.enc(image2, image2_raw, gt_labels)
+        #     loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
+        #     mask_logits = F.interpolate(mask_logits, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+        #     loss_er = torch.mean(torch.abs(mask_logits[:,1:,:,:]-mask_logits2[:,1:,:,:]))
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
                   "loss_fg": cls_fg.mean().item()}
-        if train:
-            losses['loss_er'] = loss_er.item()
+        # if train:
+        #     losses['loss_er'] = loss_er.item()
         loss = loss_cls.clone()
         # attention loss
         if args.isattention:
@@ -115,9 +115,9 @@ class DecTrainer(BaseTrainer):
 
         if "dec" in masks:
             loss_mask = loss_mask.mean()
-            if train:
-                loss_mask += loss_mask2.mean()
-                loss += loss_er
+            # if train:
+            #     loss_mask += loss_mask2.mean()
+            #     loss += loss_er
 
             if not PRETRAIN:
                 loss += cfg.NET.MASK_LOSS_BCE * loss_mask
