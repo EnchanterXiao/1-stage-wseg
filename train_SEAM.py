@@ -85,6 +85,9 @@ class DecTrainer(BaseTrainer):
 
         PRETRAIN = epoch < (11 if DEBUG else cfg.TRAIN.PRETRAIN)
         PRETRAIN_er = epoch < (11 if DEBUG else cfg.TRAIN.PRETRAIN + 5)
+        # PRETRAIN = False
+        # PRETRAIN_er = False
+
 
         # denorm image
         image_raw = self.denorm(image.clone())
@@ -100,7 +103,7 @@ class DecTrainer(BaseTrainer):
             if not PRETRAIN_er:
                 loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
             mask_logits = F.interpolate(mask_logits, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-            loss_er = torch.mean(torch.abs(mask_logits.detach()-mask_logits2)) * 0.1
+            loss_er = torch.mean(torch.abs(mask_logits.detach()-mask_logits2)) * 0.01
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
