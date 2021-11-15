@@ -128,7 +128,8 @@ class DecTrainer(BaseTrainer):
             assert not "pseudo" in masks
             masks["pseudo"] = pseudo_gt
             losses["loss_mask"] = loss_mask.item()
-            losses['loss_er'] = loss_er.item()
+            if train:
+                losses['loss_er'] = loss_er.item()
 
         losses["loss"] = loss.item()
 
