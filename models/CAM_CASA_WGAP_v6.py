@@ -153,7 +153,8 @@ def network_CAM_CASA_WGAP_v6(cfg):
 
             x = torch.mul(x, Spatial_weight)
 
-            x = self.cls_branch(x)
+            # x = self.cls_branch(x)
+            x = self.mask_branch(x)
             # constant BG scores
             # bg = torch.ones_like(x[:, :1])
             # x = torch.cat([bg, x], 1)
