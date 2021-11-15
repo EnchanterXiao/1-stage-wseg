@@ -83,7 +83,8 @@ class DecTrainer(BaseTrainer):
 
     def step(self, epoch, image, gt_labels, train=False, visualise=False):
 
-        PRETRAIN = epoch < (11 if DEBUG else cfg.TRAIN.PRETRAIN+5)
+        PRETRAIN = epoch < (11 if DEBUG else cfg.TRAIN.PRETRAIN)
+        PRETRAIN_er = epoch < (11 if DEBUG else cfg.TRAIN.PRETRAIN + 5)
 
         # denorm image
         image_raw = self.denorm(image.clone())
@@ -92,13 +93,14 @@ class DecTrainer(BaseTrainer):
         cls_out, cls_fg, masks, mask_logits, pseudo_gt, loss_mask, loss_at = self.enc(image, image_raw, gt_labels)
         # classification loss
         loss_cls = self.criterion_cls(cls_out, gt_labels).mean()
-        if train and not PRETRAIN:
+        if train:
             image2 = F.interpolate(image, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
             image2_raw = F.interpolate(image_raw, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
             cls_out2, cls_fg2, masks2, mask_logits2, pseudo_gt2, loss_mask2, loss_at2 = self.enc(image2, image2_raw, gt_labels)
-            loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
+            if not PRETRAIN_er:
+                loss_cls += self.criterion_cls(cls_out2, gt_labels).mean()
             mask_logits = F.interpolate(mask_logits, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-            loss_er = torch.mean(torch.abs(mask_logits.detach()-mask_logits2))
+            loss_er = torch.mean(torch.abs(mask_logits.detach()-mask_logits2)) * 0.1
 
         # keep track of all losses for logging
         losses = {"loss_cls": loss_cls.item(),
@@ -118,14 +120,15 @@ class DecTrainer(BaseTrainer):
 
             if not PRETRAIN:
                 loss += cfg.NET.MASK_LOSS_BCE * loss_mask
+            if not PRETRAIN_er:
                 if train:
                     loss_mask += loss_mask2.mean()
                     loss += loss_er
-                    losses['loss_er'] = loss_er.item()
 
             assert not "pseudo" in masks
             masks["pseudo"] = pseudo_gt
             losses["loss_mask"] = loss_mask.item()
+            losses['loss_er'] = loss_er.item()
 
         losses["loss"] = loss.item()
 
