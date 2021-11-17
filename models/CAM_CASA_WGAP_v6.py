@@ -191,13 +191,13 @@ def network_CAM_CASA_WGAP_v6(cfg):
             masks_dec = self.run_pamr(y_raw, self._rescale_and_clean(masks, masks, labels).detach())
 
             # upscale the masks & clean
-            mask_log = masks
+            # mask_log = masks
             masks = self._rescale_and_clean(masks, y, labels)
             masks_dec = self._rescale_and_clean(masks_dec, y, labels)
 
             # create pseudo GT
             pseudo_gt = pseudo_gtmask(masks_dec).detach()
-            loss_mask = balanced_mask_loss_ce(mask_log, pseudo_gt, labels)
+            loss_mask = balanced_mask_loss_ce(self._mask_logits, pseudo_gt, labels)
 
             return cls, cls_fg, {"cam": masks, "dec": masks_dec}, self._mask_logits, pseudo_gt, loss_mask, None
 
