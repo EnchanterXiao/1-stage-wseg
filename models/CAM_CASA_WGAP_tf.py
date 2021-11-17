@@ -137,6 +137,47 @@ class Attention(nn.Module):
 
         return x
 
+class GroupAttention(nn.Module):
+    """
+    LSA: self attention within a group
+    """
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., ws=1):
+        assert ws != 1
+        super(GroupAttention, self).__init__()
+        assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
+
+        self.dim = dim
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.ws = ws
+
+    def forward(self, x, H, W):
+        B, N, C = x.shape
+        h_group, w_group = H // self.ws, W // self.ws
+
+        total_groups = h_group * w_group
+
+        x = x.reshape(B, h_group, self.ws, w_group, self.ws, C).transpose(2, 3)
+
+        qkv = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(3, 0, 1, 4, 2, 5)
+        # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, hw, n_head, ws*ws, head_dim
+        q, k, v = qkv[0], qkv[1], qkv[2]  # B, hw, n_head, ws*ws, head_dim
+        attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(
+            attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
+        attn = (attn @ v).transpose(2, 3).reshape(B, h_group, w_group, self.ws, self.ws, C)
+        x = attn.transpose(2, 3).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
 
 def network_CAM_CASA_WGAP_tf(cfg):
     if cfg.BACKBONE == "resnet38":
@@ -175,9 +216,11 @@ def network_CAM_CASA_WGAP_tf(cfg):
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
-            self.selfattn = Attention(self.selfattention_dim, self.selfattention_dim, num_heads=8,
-                                      qkv_bias=True, qk_scale=None,
-                                      attn_drop=0., proj_drop=0., sr_ratio=1)
+            # self.selfattn = Attention(self.selfattention_dim, self.selfattention_dim, num_heads=8,
+            #                           qkv_bias=True, qk_scale=None,
+            #                           attn_drop=0., proj_drop=0., sr_ratio=1)
+            self.selfattn = GroupAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
+                                           attn_drop=0., proj_drop=0., ws=2)
             self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
