@@ -137,7 +137,7 @@ class Attention(nn.Module):
         return x
 
 
-def network_CAM_CASA_WGAP_v6(cfg):
+def network_CAM_CASA_WGAP_tf(cfg):
     if cfg.BACKBONE == "resnet38":
         print("Backbone: ResNet38")
         backbone = ResNet38
