@@ -93,44 +93,45 @@ class Attention(nn.Module):
     """
     GSA: using a  key to summarize the information for a group to be efficient.
     """
-    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., sr_ratio=1):
+    def __init__(self, input_dim, output_dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., sr_ratio=1):
         super().__init__()
-        assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
+        assert output_dim % num_heads == 0, f"dim {output_dim} should be divided by num_heads {num_heads}."
 
-        self.dim = dim
+        self.input_dim = input_dim
+        self.output_dim = output_dim
         self.num_heads = num_heads
-        head_dim = dim // num_heads
+        head_dim = output_dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.q = nn.Linear(dim, dim, bias=qkv_bias)
-        self.kv = nn.Linear(dim, dim * 2, bias=qkv_bias)
+        self.q = nn.Linear(input_dim, output_dim, bias=qkv_bias)
+        self.kv = nn.Linear(input_dim, output_dim * 2, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim, dim)
+        self.proj = nn.Linear(output_dim, output_dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
         self.sr_ratio = sr_ratio
         if sr_ratio > 1:
-            self.sr = nn.Conv2d(dim, dim, kernel_size=sr_ratio, stride=sr_ratio)
-            self.norm = nn.LayerNorm(dim)
+            self.sr = nn.Conv2d(input_dim, input_dim, kernel_size=sr_ratio, stride=sr_ratio)
+            self.norm = nn.LayerNorm(input_dim)
 
     def forward(self, x, H, W):
         B, N, C = x.shape
-        q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+        q = self.q(x).reshape(B, N, self.num_heads, self.output_dim // self.num_heads).permute(0, 2, 1, 3)
 
         if self.sr_ratio > 1:
             x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
             x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1)
             x_ = self.norm(x_)
-            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, self.output_dim // self.num_heads).permute(2, 0, 3, 1, 4)
         else:
-            kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            kv = self.kv(x).reshape(B, -1, 2, self.num_heads, self.output_dim // self.num_heads).permute(2, 0, 3, 1, 4)
         k, v = kv[0], kv[1]
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, self.output_dim)
         x = self.proj(x)
         x = self.proj_drop(x)
 
@@ -163,23 +164,26 @@ def network_CAM_CASA_WGAP_tf(cfg):
 
             self.cfg = config
             self.num_classes = num_classes
+            self.selfattention_dim = 128
 
-            self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
+            # self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
+            self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
+            self.fc8 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
             nn.init.xavier_uniform_(self.fc8.weight)
 
             cls_modules = [self.fc8]
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
-            self.selfattn = Attention(self, 4096, num_heads=8, qkv_bias=True, qk_scale=None,
+            self.selfattn = Attention(self.selfattention_dim, self.selfattention_dim, num_heads=8,
+                                      qkv_bias=True, qk_scale=None,
                                       attn_drop=0., proj_drop=0., sr_ratio=1)
-
-            self.caatention = ChannelAttention(in_planes=4096)
+            self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
             self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
 
-            self.from_scratch_layers = [self.fc8]
+            self.from_scratch_layers = [self.fc7, self.fc8]
 
             self._aff = PAMR(self.cfg.PAMR_ITER, self.cfg.PAMR_KERNEL)
 
@@ -197,10 +201,11 @@ def network_CAM_CASA_WGAP_tf(cfg):
             test_mode = labels is None
 
             x = self.forward_backbone(y)
+            x = self.fc7(x)
             bs, c, h, w = x.size()
-            x = torch.reshape(x, (bs, c, h*w)).transpose(0, 2, 1)
+            x = torch.reshape(x, (bs, c, h*w)).permute(0, 2, 1)
             x = self.selfattn(x, h, w)
-            x = torch.reshape(x.transpose(0, 2, 1), (bs, c, h, w))
+            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))
 
             Channel_attention = self.caatention(x)
             x = torch.mul(x, Channel_attention)
