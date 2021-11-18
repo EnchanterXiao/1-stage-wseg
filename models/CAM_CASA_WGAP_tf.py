@@ -205,12 +205,13 @@ def network_CAM_CASA_WGAP_tf(cfg):
 
             self.cfg = config
             self.num_classes = num_classes
-            self.selfattention_dim = 128
+            self.selfattention_dim = 1024
 
             # self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
             self.fc8 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
             nn.init.xavier_uniform_(self.fc8.weight)
+            nn.init.xavier_uniform_(self.fc7.weight)
 
             cls_modules = [self.fc8]
             if dropout:
@@ -226,7 +227,7 @@ def network_CAM_CASA_WGAP_tf(cfg):
             self.cls_branch = nn.Sequential(*cls_modules)
             self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
 
-            self.from_scratch_layers = [self.fc7, self.fc8]
+            self.from_scratch_layers = [self.fc8]
 
             self._aff = PAMR(self.cfg.PAMR_ITER, self.cfg.PAMR_KERNEL)
 
@@ -246,6 +247,7 @@ def network_CAM_CASA_WGAP_tf(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
+            # print(bs, c, h, w)
             x = torch.reshape(x, (bs, c, h*w)).permute(0, 2, 1)
             x = self.selfattn(x, h, w)
             x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))

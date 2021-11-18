@@ -226,11 +226,11 @@ class DecTrainer(BaseTrainer):
         # self.writer.add_scalar('lr/bg_baseline', self.enc.module.mean.item(), epoch)
 
         # visualising
-        self.enc.eval()
-        with torch.no_grad():
-            self.step(epoch, self.fixed_batch["image"], \
-                      self.fixed_batch["labels"], \
-                      train=False, visualise=True)
+        # self.enc.eval()
+        # with torch.no_grad():
+        #     self.step(epoch, self.fixed_batch["image"], \
+        #               self.fixed_batch["labels"], \
+        #               train=False, visualise=True)
 
     def _mask_rgb(self, masks, image_norm):
         # visualising masks
@@ -375,9 +375,9 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             if epoch == 0:
-                # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                #           checkpoint=False)
-                pass
+                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                          checkpoint=False)
+                # pass
             else:
                 time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
                           checkpoint=True)

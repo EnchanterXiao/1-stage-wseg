@@ -1,6 +1,6 @@
 NUM_GPUS: 1
 DATASET:
-  CROP_SIZE: 321
+  CROP_SIZE: 384 #321
   SCALE_FROM: 0.9
   SCALE_TO: 1.0
   ROOT: "../1sw/data"
