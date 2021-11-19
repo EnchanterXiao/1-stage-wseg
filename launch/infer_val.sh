@@ -11,9 +11,9 @@ FILELIST=../1sw/data/val_voc.txt
 ## You values here (see below how they're used)
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1116
+EXP=v1118
 RUN_ID=cam_casa_wgap_v6
-SNAPSHOT=e020Xs0.913
+SNAPSHOT=e016Xs0.913
 EXTRA_ARGS=
 SAVE_ID=cam_casa_wgap_v6
 #

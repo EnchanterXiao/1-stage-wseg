@@ -375,9 +375,9 @@ if __name__ == "__main__":
 
         with torch.no_grad():
             if epoch == 0:
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=False)
-                # pass
+                # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                #           checkpoint=False)
+                pass
             else:
                 time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
                           checkpoint=True)

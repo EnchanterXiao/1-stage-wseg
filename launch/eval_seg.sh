@@ -6,7 +6,7 @@ FILELIST=../1sw/data/val_voc.txt # validation
 ## You values here:
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1116
+EXP=v1118
 RUN_ID=cam_casa_wgap_v6
 Thresh0=_0
 Thresh1=_1
@@ -25,14 +25,14 @@ nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_D
 SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh1/no_crf
 nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
 
-SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh3/no_crf
-nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
-
-SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh5/no_crf
-nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
-
-SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh7/no_crf
-nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+#SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh3/no_crf
+#nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+#
+#SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh5/no_crf
+#nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+#
+#SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh7/no_crf
+#nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
 
 # with CRF
 # SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME/crf
