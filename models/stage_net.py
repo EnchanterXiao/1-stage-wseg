@@ -15,6 +15,7 @@ from .CAM_CASA_WGAP_PCM import *
 from .CAM_CASA_WGAP_v6 import *
 from .CAM_CASA_WGAP_tf import *
 from .CAM_CASA_WGAP_tf_v2 import *
+from .CAM_CASA_WGAP_tf_v3 import *
 
 #
 # Dynamic change of the base class
@@ -56,6 +57,8 @@ def network_factory(cfg):
         return network_CAM_CASA_WGAP_tf(cfg)
     elif cfg.MODEL == 'CAM_CASA_WGAP_tf_v2':
         return network_CAM_CASA_WGAP_tf_v2(cfg)
+    elif cfg.MODEL == 'CAM_CASA_WGAP_tf_v3':
+        return network_CAM_CASA_WGAP_tf_v3(cfg)
     else:
         raise NotImplementedError("Unknown model '{}'".format(cfg.MODEL))
 
