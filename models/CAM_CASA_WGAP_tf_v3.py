@@ -207,19 +207,25 @@ def network_CAM_CASA_WGAP_tf_v3(cfg):
 
             self.cfg = config
             self.num_classes = num_classes
-            self.selfattention_dim = num_classes
-            self.fc8 = Attention(self.fan_out(), self.selfattention_dim, num_heads=8,
-                                      qkv_bias=True, qk_scale=None,
-                                      attn_drop=0., proj_drop=0., sr_ratio=3)
-            cls_modules = [self.fc8]
+            self.selfattention_dim = num_classes*8
+            self.fc7 = nn.Conv2d(self.fan_out(), 1024, 1, bias=False)
+            # self.fc8 = Attention(1024, self.selfattention_dim, num_heads=8,
+            #                           qkv_bias=True, qk_scale=None,
+            #                           attn_drop=0., proj_drop=0., sr_ratio=1)
+            self.fc8 = GroupAttention(1024, self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
+                           attn_drop=0., proj_drop=0., ws=2)
+            self.fc8_2 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
+            nn.init.xavier_uniform_(self.fc8_2.weight)
+
+            cls_modules = [self.fc8, self.fc8_2]
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
-            self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
+            self.caatention = ChannelAttention(in_planes=self.fan_out())
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
-            self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
+            self.mask_branch = nn.Sequential(self.fc8_2, nn.ReLU())
 
-            self.from_scratch_layers = [self.fc8]
+            self.from_scratch_layers = [self.fc8, self.fc8_2]
             self._aff = PAMR(self.cfg.PAMR_ITER, self.cfg.PAMR_KERNEL)
             if pre_weights:
                 self._init_weights(pre_weights)
@@ -234,19 +240,17 @@ def network_CAM_CASA_WGAP_tf_v3(cfg):
             test_mode = labels is None
 
             x = self.forward_backbone(y)
-            x = self.fc7(x)
-            bs, c, h, w = x.size()
-            # print(bs, c, h, w)
-
-
             Channel_attention = self.caatention(x)
             x = x + torch.mul(x, Channel_attention)
             Spatial_weight, attention_map = self.attention(x)
             x = x + torch.mul(x, Spatial_weight)
 
+            x = self.fc7(x)
+            bs, c, h, w = x.size()
             x = torch.reshape(x, (bs, c, h * w)).permute(0, 2, 1)
-            x = self.mask_branch(x)
+            x = self.fc8(x, h, w)
             x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))
+            x = self.mask_branch(x)
 
             bs, c, h, w = x.size()
             masks = F.softmax(x, dim=1)

@@ -3,8 +3,8 @@
 ## Your values here:
 #
 DS=pascal_voc
-EXP=v1118
-RUN_ID=cam_casa_wgap_tf_v2
+EXP=v1120
+RUN_ID=cam_casa_wgap_tf_v3
 #
 ##
 
