@@ -7,7 +7,8 @@ from core.config import cfg
 
 
 def add_global_arguments(parser):
-
+    parser.add_argument('--start_epoch', type=int, default=0,
+                        metavar='N', help='start epoch')
     parser.add_argument("--dataset", type=str,
                         help="Determines dataloader to use (only Pascal VOC supported)")
     parser.add_argument("--exp", type=str, default="main",
@@ -70,6 +71,7 @@ def check_global_arguments(args):
     maybe_create_dir(args.snapshot_dir)
     #print("Saving snapshots in: {}".format(args.snapshot_dir))
 
+
 def add_cam_args(parser):
     # parser = argparse.ArgumentParser()
     parser.add_argument('--use-cuda', action='store_true', default=False,
@@ -95,6 +97,7 @@ def add_cam_args(parser):
                              '/ablationcam/eigencam/eigengradcam/layercam')
 
     # return args
+
 
 def get_arguments(args_in):
     """Parse all the arguments provided from the CLI.

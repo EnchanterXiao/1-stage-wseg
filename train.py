@@ -76,6 +76,7 @@ class DecTrainer(BaseTrainer):
         super(DecTrainer, self).__init__(args, **kwargs)
 
         # dataloader
+        self.start_epoch = args.start_epoch+1
         self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME)
         self.valloader = get_dataloader(args, cfg, 'val_voc')
         self.denorm = self.trainloader.dataset.denorm
