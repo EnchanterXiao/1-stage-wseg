@@ -76,7 +76,7 @@ class DecTrainer(BaseTrainer):
         super(DecTrainer, self).__init__(args, **kwargs)
 
         # dataloader
-        self.start_epoch = args.start_epoch+1
+        self.start_epoch = args.start_epoch
         self.trainloader = get_dataloader(args, cfg, cfg.DATASET.FILENAME)
         self.valloader = get_dataloader(args, cfg, 'val_voc')
         self.denorm = self.trainloader.dataset.denorm
@@ -226,13 +226,6 @@ class DecTrainer(BaseTrainer):
 
         # self.writer.add_scalar('lr/bg_baseline', self.enc.module.mean.item(), epoch)
 
-        # visualising
-        # self.enc.eval()
-        # with torch.no_grad():
-        #     self.step(epoch, self.fixed_batch["image"], \
-        #               self.fixed_batch["labels"], \
-        #               train=False, visualise=True)
-
     def validation(self, epoch, writer, loader, checkpoint=False):
 
         stat = StatManager()
@@ -368,6 +361,7 @@ if __name__ == "__main__":
         func(*args, **kwargs)
         print(msg + (" {:3.2}m".format(timer.get_stage_elapsed() / 60.)))
 
+    print(trainer.start_epoch)
     for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS + 1):
         print("Epoch >>> ", epoch)
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
