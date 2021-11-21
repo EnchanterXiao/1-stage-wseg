@@ -232,31 +232,6 @@ class DecTrainer(BaseTrainer):
         #               self.fixed_batch["labels"], \
         #               train=False, visualise=True)
 
-    def _mask_rgb(self, masks, image_norm):
-        # visualising masks
-        masks_conf, masks_idx = torch.max(masks, 1)
-        masks_conf = masks_conf - F.relu(masks_conf - 1, 0)
-
-        masks_idx_rgb = self._apply_cmap(masks_idx.cpu(), masks_conf.cpu())
-        return 0.3 * image_norm + 0.7 * masks_idx_rgb
-
-    def _init_norm(self):
-        self.trainloader.dataset.set_norm(self.enc.normalize)
-        self.valloader.dataset.set_norm(self.enc.normalize)
-
-    def _apply_cmap(self, mask_idx, mask_conf):
-        palette = self.trainloader.dataset.get_palette()
-
-        masks = []
-        col = Colorize()
-        mask_conf = mask_conf.float() / 255.0
-        for mask, conf in zip(mask_idx.split(1), mask_conf.split(1)):
-            m = col(mask).float()
-            m = m * conf
-            masks.append(m[None, ...])
-
-        return torch.cat(masks, 0)
-
     def validation(self, epoch, writer, loader, checkpoint=False):
 
         stat = StatManager()
@@ -325,6 +300,31 @@ class DecTrainer(BaseTrainer):
             writer.add_scalar('all/checkpoint_score', proxy_score, epoch)
             self.checkpoint_best(proxy_score, epoch)
 
+    def _mask_rgb(self, masks, image_norm):
+        # visualising masks
+        masks_conf, masks_idx = torch.max(masks, 1)
+        masks_conf = masks_conf - F.relu(masks_conf - 1, 0)
+
+        masks_idx_rgb = self._apply_cmap(masks_idx.cpu(), masks_conf.cpu())
+        return 0.3 * image_norm + 0.7 * masks_idx_rgb
+
+    def _init_norm(self):
+        self.trainloader.dataset.set_norm(self.enc.normalize)
+        self.valloader.dataset.set_norm(self.enc.normalize)
+
+    def _apply_cmap(self, mask_idx, mask_conf):
+        palette = self.trainloader.dataset.get_palette()
+
+        masks = []
+        col = Colorize()
+        mask_conf = mask_conf.float() / 255.0
+        for mask, conf in zip(mask_idx.split(1), mask_conf.split(1)):
+            m = col(mask).float()
+            m = m * conf
+            masks.append(m[None, ...])
+
+        return torch.cat(masks, 0)
+
     def _visualise(self, epoch, image, masks, mask_logits, cls_out, gt_labels):
         image_norm = self.denorm(image.clone()).cpu()
         visual = [image_norm]
@@ -357,35 +357,19 @@ if __name__ == "__main__":
         cfg_from_list(args.set_cfgs)
 
     print("Config: \n", cfg)
-
     trainer = DecTrainer(args)
     torch.manual_seed(0)
 
     timer = Timer()
-
 
     def time_call(func, msg, *args, **kwargs):
         timer.reset_stage()
         func(*args, **kwargs)
         print(msg + (" {:3.2}m".format(timer.get_stage_elapsed() / 60.)))
 
-
     for epoch in range(trainer.start_epoch, cfg.TRAIN.NUM_EPOCHS + 1):
         print("Epoch >>> ", epoch)
-
-        with torch.no_grad():
-            if epoch == 0:
-                # time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                #           checkpoint=False)
-                pass
-            else:
-                time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
-                          checkpoint=True)
-        # # log_int = 5 if DEBUG else 2
-        # # if epoch % log_int == 0:
-        #     with torch.no_grad():
-        #         if not DEBUG:
-        #             time_call(trainer.validation, "Validation / Train: ", epoch, trainer.writer, trainer.trainloader_val)
-        #         time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader, checkpoint=True)
-
         time_call(trainer.train_epoch, "Train epoch: ", epoch)
+        with torch.no_grad():
+            time_call(trainer.validation, "Validation /   Val: ", epoch, trainer.writer_val, trainer.valloader,
+                          checkpoint=True)
