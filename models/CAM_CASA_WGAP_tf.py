@@ -140,6 +140,7 @@ class Attention(nn.Module):
 class GroupAttention(nn.Module):
     """
     LSA: self attention within a group
+    local area = window_size * window_size
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., ws=1):
         assert ws != 1
@@ -173,6 +174,48 @@ class GroupAttention(nn.Module):
         attn = self.attn_drop(
             attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
         attn = (attn @ v).transpose(2, 3).reshape(B, h_group, w_group, self.ws, self.ws, C)
+        x = attn.transpose(2, 3).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
+
+class GroupAttention_v2(nn.Module):
+    """
+    LSA: self attention within a group
+    local area = H*W//(group_nums*group_nums)
+    """
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., group_nums=1):
+        super(GroupAttention, self).__init__()
+        assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
+
+        self.dim = dim
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.group_nums = group_nums
+
+    def forward(self, x, H, W):
+        B, N, C = x.shape
+        h_dim, w_dim = H // self.group_nums, W // self.group_nums
+
+        total_groups = self.group_nums * self.group_nums
+
+        x = x.reshape(B, self.group_nums, h_dim, self.group_nums,  w_dim, C).transpose(2, 3)
+
+        qkv = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(3, 0, 1, 4, 2, 5)
+        # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, total_groups, n_head, h_dim*w_dim, head_dim
+        q, k, v = qkv[0], qkv[1], qkv[2]  # B, total_groups, n_head, h_dim*w_dim, head_dim
+        attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, h_dim*w_dim, h_dim*w_dim
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(
+            attn)  # attn @ v-> B, total_groups, n_head, h_dim*w_dim, head_dim -> (t(2,3)) B, total_groups, h_dim*w_dim, n_head, head_dim
+        attn = (attn @ v).transpose(2, 3).reshape(B, self.group_nums, self.group_nums, h_dim, w_dim, C)
         x = attn.transpose(2, 3).reshape(B, N, C)
         x = self.proj(x)
         x = self.proj_drop(x)
