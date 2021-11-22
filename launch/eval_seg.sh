@@ -6,8 +6,8 @@ FILELIST=../1sw/data/val_voc.txt # validation
 ## You values here:
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1118
-RUN_ID=cam_casa_wgap_v6
+EXP=v1121
+RUN_ID=cam_casa_wgap_tf_v6
 Thresh0=_0
 Thresh1=_1
 Thresh3=_3

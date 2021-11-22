@@ -88,13 +88,63 @@ def balanced_mask_loss_ce(mask, pseudo_gt, gt_labels, ignore_index=255):
     loss = batch_weight * (class_weight * loss).mean(-1)
     return loss
 
-class GroupTalkingAttention(nn.Module):
+
+class Attention(nn.Module):
+    """
+    GSA: using a  key to summarize the information for a group to be efficient.
+    """
+    def __init__(self, input_dim, output_dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., sr_ratio=1):
+        super().__init__()
+        assert output_dim % num_heads == 0, f"dim {output_dim} should be divided by num_heads {num_heads}."
+
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.num_heads = num_heads
+        head_dim = output_dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.q = nn.Linear(input_dim, output_dim, bias=qkv_bias)
+        self.kv = nn.Linear(input_dim, output_dim * 2, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(output_dim, output_dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+
+        self.sr_ratio = sr_ratio
+        if sr_ratio > 1:
+            self.sr = nn.Conv2d(input_dim, input_dim, kernel_size=sr_ratio, stride=sr_ratio)
+            self.norm = nn.LayerNorm(input_dim)
+
+    def forward(self, x, H, W):
+        B, N, C = x.shape
+        q = self.q(x).reshape(B, N, self.num_heads, self.output_dim // self.num_heads).permute(0, 2, 1, 3)
+
+        if self.sr_ratio > 1:
+            x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
+            x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1)
+            x_ = self.norm(x_)
+            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, self.output_dim // self.num_heads).permute(2, 0, 3, 1, 4)
+        else:
+            kv = self.kv(x).reshape(B, -1, 2, self.num_heads, self.output_dim // self.num_heads).permute(2, 0, 3, 1, 4)
+        k, v = kv[0], kv[1]
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, self.output_dim)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+
+        return x
+
+class GroupAttention(nn.Module):
     """
     LSA: self attention within a group
+    local area = window_size * window_size
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., ws=1):
         assert ws != 1
-        super(GroupTalkingAttention, self).__init__()
+        super(GroupAttention, self).__init__()
         assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
 
         self.dim = dim
@@ -108,9 +158,6 @@ class GroupTalkingAttention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
         self.ws = ws
 
-        self.pre_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
-        self.post_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
-
     def forward(self, x, H, W):
         B, N, C = x.shape
         h_group, w_group = H // self.ws, W // self.ws
@@ -123,13 +170,9 @@ class GroupTalkingAttention(nn.Module):
         # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, hw, n_head, ws*ws, head_dim
         q, k, v = qkv[0], qkv[1], qkv[2]  # B, hw, n_head, ws*ws, head_dim
         attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
-        attn = attn.permute(0, 1, 3, 4, 2)
-        attn = self.pre_softmax_proj(attn)
-        attn = attn.softmax(dim=-2)
-        attn = self.post_softmax_proj(attn).permute(0, 1, 4, 2, 3)
+        attn = attn.softmax(dim=-1)
         attn = self.attn_drop(
             attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
-
         attn = (attn @ v).transpose(2, 3).reshape(B, h_group, w_group, self.ws, self.ws, C)
         x = attn.transpose(2, 3).reshape(B, N, C)
         x = self.proj(x)
@@ -137,7 +180,49 @@ class GroupTalkingAttention(nn.Module):
         return x
 
 
-def network_CAM_CASA_WGAP_tf_v7(cfg):
+class GroupAttention_v2(nn.Module):
+    """
+    LSA: self attention within a group
+    local area = H*W//(group_nums*group_nums)
+    """
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., group_nums=1):
+        super(GroupAttention_v2, self).__init__()
+        assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
+
+        self.dim = dim
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.group_nums = group_nums
+
+    def forward(self, x, H, W):
+        B, N, C = x.shape
+        h_dim, w_dim = H // self.group_nums, W // self.group_nums
+
+        total_groups = self.group_nums * self.group_nums
+
+        x = x.reshape(B, self.group_nums, h_dim, self.group_nums,  w_dim, C).transpose(2, 3)
+
+        qkv = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(3, 0, 1, 4, 2, 5)
+        # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, total_groups, n_head, h_dim*w_dim, head_dim
+        q, k, v = qkv[0], qkv[1], qkv[2]  # B, total_groups, n_head, h_dim*w_dim, head_dim
+        attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, h_dim*w_dim, h_dim*w_dim
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(
+            attn)  # attn @ v-> B, total_groups, n_head, h_dim*w_dim, head_dim -> (t(2,3)) B, total_groups, h_dim*w_dim, n_head, head_dim
+        attn = (attn @ v).transpose(2, 3).reshape(B, self.group_nums, self.group_nums, h_dim, w_dim, C)
+        x = attn.transpose(2, 3).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
+
+def network_CAM_CASA_WGAP_tf_v8(cfg):
     if cfg.BACKBONE == "resnet38":
         print("Backbone: ResNet38")
         backbone = ResNet38
@@ -156,7 +241,7 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
     '''
             CAM+SpatialAttention+CA+WGAP
     '''
-    class CAM_SpatialAttention_CASA_WGAP_tf_v7(backbone):
+    class CAM_SpatialAttention_CASA_WGAP_tf_v8(backbone):
 
         def __init__(self, config, pre_weights=None, num_classes=21, dropout=True):
             super().__init__()
@@ -164,8 +249,8 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             self.cfg = config
             self.num_classes = num_classes
             self.selfattention_dim = 1024
-            self.window_size = 7
 
+            # self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
             self.fc8 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
             nn.init.xavier_uniform_(self.fc8.weight)
@@ -174,8 +259,9 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             cls_modules = [self.fc8]
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
-            self.selfattn = GroupTalkingAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
-                                           attn_drop=0., proj_drop=0., ws=self.window_size)
+
+            self.selfattn = GroupAttention_v2(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
+                                           attn_drop=0., proj_drop=0., group_nums=3)
             self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
@@ -201,13 +287,9 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
-            padh = self.window_size - (h%self.window_size)
-            padw = self.window_size - (w%self.window_size)
-            x = F.pad(x, (0, padh, 0, padw))
-            x = torch.reshape(x, (bs, c, (h+padh)*(w+padw))).permute(0, 2, 1)
-            x = self.selfattn(x, (h+padh), (w+padw))
-            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, (h+padh), (w+padw)))
-            x = x[:, :, :h, :w]
+            x = torch.reshape(x, (bs, c, h*w)).permute(0, 2, 1)
+            x = self.selfattn(x, h, w)
+            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))
 
             Channel_attention = self.caatention(x)
             x = torch.mul(x, Channel_attention)
@@ -269,4 +351,4 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             masks_dec = self._aff(im, mask)
             return masks_dec
 
-    return CAM_SpatialAttention_CASA_WGAP_tf_v7
+    return CAM_SpatialAttention_CASA_WGAP_tf_v8
