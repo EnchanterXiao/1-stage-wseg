@@ -2,8 +2,8 @@
 
 ## Your values here:
 DS=pascal_voc
-EXP=v1122
-RUN_ID=cam_casa_wgap_tf_v7
+EXP=v1123
+RUN_ID=cam_casa_wgap_tf_v9
 #热加载参数
 SNAPSHOT=e005Xs0.914
 start_epoch=5

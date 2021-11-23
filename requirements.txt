@@ -1,13 +1,13 @@
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
 # platform: linux-64
-python=3.6.3
-numpy=1.15.4
-pillow=5.4.1
+#python=3.6.3
+#numpy=1.15.4
+#pillow=5.4.1
 pydensecrf=1.0rc3
-pytorch=1.0.1
+#pytorch=1.0.1
 pyyaml=3.13
-torchvision=0.2.1
+#torchvision=0.2.1
 tqdm==4.31.1
 tensorboardX=1.6
 packaging=19.0
