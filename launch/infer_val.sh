@@ -12,10 +12,10 @@ FILELIST=../1sw/data/val_voc.txt
 #
 OUTPUT_DIR=../1sw/output
 EXP=v1122
-RUN_ID=cam_casa_wgap_tf_v8
-SNAPSHOT=e009Xs0.903
+RUN_ID=cam_casa_wgap_tf_v7
+SNAPSHOT=e011Xs0.912
 EXTRA_ARGS=
-SAVE_ID=cam_casa_wgap_tf_v8
+SAVE_ID=cam_casa_wgap_tf_v7
 #
 ##
 
