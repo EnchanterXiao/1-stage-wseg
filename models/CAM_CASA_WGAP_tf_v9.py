@@ -169,7 +169,7 @@ def network_CAM_CASA_WGAP_tf_v9(cfg):
 
             self.cfg = config
             self.num_classes = num_classes
-            self.selfattention_dim = 1024
+            self.selfattention_dim = 512
             self.window_size = 7
 
             self.fc6 = nn.Conv2d(256, self.selfattention_dim, 2, 2, bias=False)
