@@ -164,7 +164,7 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             self.cfg = config
             self.num_classes = num_classes
             self.selfattention_dim = 1024
-            self.window_size = 7
+            self.window_size = 2
 
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
             self.fc8 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
@@ -201,9 +201,9 @@ def network_CAM_CASA_WGAP_tf_v7(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
-            padh = self.window_size - (h%self.window_size)
-            padw = self.window_size - (w%self.window_size)
-            x = F.pad(x, (0, padh, 0, padw))
+            padh = (self.window_size - (h%self.window_size))%self.window_size
+            padw = (self.window_size - (w%self.window_size))%self.window_size
+            x = F.pad(x, (0, padw, 0, padh))
             x = torch.reshape(x, (bs, c, (h+padh)*(w+padw))).permute(0, 2, 1)
             x = self.selfattn(x, (h+padh), (w+padw))
             x = torch.reshape(x.permute(0, 2, 1), (bs, -1, (h+padh), (w+padw)))

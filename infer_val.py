@@ -132,6 +132,7 @@ if __name__ == '__main__':
             masks_pred = masks_pred.cpu()
             labels = labels.type_as(masks_pred)
             pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+            # writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
             timer.update_progress(float(iter + 1) / N)
             if iter % 100 == 0:
                 msg = "Finish time: {}".format(timer.str_est_finish())

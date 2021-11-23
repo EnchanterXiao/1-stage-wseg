@@ -249,6 +249,7 @@ def network_CAM_CASA_WGAP_tf_v8(cfg):
             self.cfg = config
             self.num_classes = num_classes
             self.selfattention_dim = 1024
+            self.group_nums = 3
 
             # self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
@@ -261,7 +262,7 @@ def network_CAM_CASA_WGAP_tf_v8(cfg):
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
             self.selfattn = GroupAttention_v2(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
-                                           attn_drop=0., proj_drop=0., group_nums=3)
+                                           attn_drop=0., proj_drop=0., group_nums=self.group_nums)
             self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
@@ -287,9 +288,13 @@ def network_CAM_CASA_WGAP_tf_v8(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
-            x = torch.reshape(x, (bs, c, h*w)).permute(0, 2, 1)
-            x = self.selfattn(x, h, w)
-            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))
+            padh = (self.group_nums - (h % self.group_nums)) % self.group_nums
+            padw = (self.group_nums - (w % self.group_nums)) % self.group_nums
+            x = F.pad(x, (0, padw, 0, padh))
+            x = torch.reshape(x, (bs, c, (h + padh) * (w + padw))).permute(0, 2, 1)
+            x = self.selfattn(x, (h + padh), (w + padw))
+            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, (h + padh), (w + padw)))
+            x = x[:, :, :h, :w]
 
             Channel_attention = self.caatention(x)
             x = torch.mul(x, Channel_attention)

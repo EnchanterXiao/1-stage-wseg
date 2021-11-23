@@ -54,14 +54,13 @@ class VOC12ClsDataset(VOC12ImageDataset):
 
     def _pad(self, image):
         w, h = image.size
-
+        pad_mask = Image.new("L", image.size)
         if self.pad_size == [0, 0]:
             pad_l = 0
             pad_r = 0
             pad_t = 0
             pad_b = 0
         else:
-            pad_mask = Image.new("L", image.size)
             pad_height = self.pad_size[0] - h
             pad_width = self.pad_size[1] - w
 
@@ -71,9 +70,10 @@ class VOC12ClsDataset(VOC12ImageDataset):
             pad_r = max(0, pad_width - pad_l)
             pad_t = max(0, pad_height // 2)
             pad_b = max(0, pad_height - pad_t)
+            pad_mask = F.pad(pad_mask, (pad_l, pad_t, pad_r, pad_b), fill=1, padding_mode="constant")
 
         image = F.pad(image, (pad_l, pad_t, pad_r, pad_b), fill=0, padding_mode="constant")
-        pad_mask = F.pad(pad_mask, (pad_l, pad_t, pad_r, pad_b), fill=1, padding_mode="constant")
+
 
         return image, pad_mask, [pad_t, pad_l]
 

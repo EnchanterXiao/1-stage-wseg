@@ -1,200 +1,0 @@
-Model: Baseline
-Backbone: ResNet38
-Loading weights from:  ../1sw/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.pth
-Inference batch size:  1
-  0%|          | 0/1449 [00:00<?, ?it/s]                                          0%|          | 0/1449 [00:01<?, ?it/s]Finish time: Mon Oct  4 11:59:55 2021
-  0%|          | 1/1449 [00:01<28:22,  1.18s/it]  0%|          | 2/1449 [00:01<23:16,  1.04it/s]  0%|          | 3/1449 [00:02<20:15,  1.19it/s]  0%|          | 4/1449 [00:02<17:39,  1.36it/s]  0%|          | 5/1449 [00:03<15:46,  1.53it/s]  0%|          | 6/1449 [00:03<14:27,  1.66it/s]  0%|          | 7/1449 [00:04<13:32,  1.77it/s]  1%|          | 8/1449 [00:04<12:55,  1.86it/s]  1%|          | 9/1449 [00:05<12:28,  1.92it/s]  1%|          | 10/1449 [00:05<12:10,  1.97it/s]  1%|          | 11/1449 [00:06<12:31,  1.91it/s]  1%|          | 12/1449 [00:06<12:13,  1.96it/s]  1%|          | 13/1449 [00:07<12:20,  1.94it/s]  1%|          | 14/1449 [00:07<12:10,  1.96it/s]  1%|          | 15/1449 [00:08<11:57,  2.00it/s]  1%|          | 16/1449 [00:08<11:47,  2.03it/s]  1%|          | 17/1449 [00:09<11:38,  2.05it/s]  1%|          | 18/1449 [00:09<11:34,  2.06it/s]  1%|▏         | 19/1449 [00:09<11:29,  2.07it/s]  1%|▏         | 20/1449 [00:10<11:27,  2.08it/s]  1%|▏         | 21/1449 [00:10<11:26,  2.08it/s]  2%|▏         | 22/1449 [00:11<11:33,  2.06it/s]  2%|▏         | 23/1449 [00:11<11:29,  2.07it/s]  2%|▏         | 24/1449 [00:12<11:26,  2.08it/s]  2%|▏         | 25/1449 [00:12<11:25,  2.08it/s]  2%|▏         | 26/1449 [00:13<11:23,  2.08it/s]  2%|▏         | 27/1449 [00:13<11:23,  2.08it/s]  2%|▏         | 28/1449 [00:14<11:22,  2.08it/s]  2%|▏         | 29/1449 [00:14<11:22,  2.08it/s]  2%|▏         | 30/1449 [00:15<11:45,  2.01it/s]  2%|▏         | 31/1449 [00:15<12:06,  1.95it/s]  2%|▏         | 32/1449 [00:16<12:20,  1.91it/s]  2%|▏         | 33/1449 [00:16<12:32,  1.88it/s]  2%|▏         | 34/1449 [00:17<12:37,  1.87it/s]  2%|▏         | 35/1449 [00:18<12:15,  1.92it/s]  2%|▏         | 36/1449 [00:18<11:57,  1.97it/s]  3%|▎         | 37/1449 [00:18<11:44,  2.00it/s]  3%|▎         | 38/1449 [00:19<11:35,  2.03it/s]  3%|▎         | 39/1449 [00:19<11:29,  2.04it/s]  3%|▎         | 40/1449 [00:20<11:24,  2.06it/s]  3%|▎         | 41/1449 [00:20<11:21,  2.07it/s]  3%|▎         | 42/1449 [00:21<11:18,  2.07it/s]  3%|▎         | 43/1449 [00:21<11:18,  2.07it/s]  3%|▎         | 44/1449 [00:22<11:15,  2.08it/s]  3%|▎         | 45/1449 [00:22<11:15,  2.08it/s]  3%|▎         | 46/1449 [00:23<11:14,  2.08it/s]  3%|▎         | 47/1449 [00:23<11:14,  2.08it/s]  3%|▎         | 48/1449 [00:24<11:13,  2.08it/s]  3%|▎         | 49/1449 [00:24<11:13,  2.08it/s]  3%|▎         | 50/1449 [00:25<11:12,  2.08it/s]  4%|▎         | 51/1449 [00:25<11:12,  2.08it/s]  4%|▎         | 52/1449 [00:26<11:11,  2.08it/s]  4%|▎         | 53/1449 [00:26<11:44,  1.98it/s]  4%|▎         | 54/1449 [00:27<12:02,  1.93it/s]  4%|▍         | 55/1449 [00:27<12:07,  1.92it/s]  4%|▍         | 56/1449 [00:28<11:58,  1.94it/s]  4%|▍         | 57/1449 [00:28<11:49,  1.96it/s]  4%|▍         | 58/1449 [00:29<11:37,  1.99it/s]  4%|▍         | 59/1449 [00:29<11:30,  2.01it/s]  4%|▍         | 60/1449 [00:30<11:24,  2.03it/s]  4%|▍         | 61/1449 [00:30<11:20,  2.04it/s]  4%|▍         | 62/1449 [00:31<11:19,  2.04it/s]  4%|▍         | 63/1449 [00:31<11:18,  2.04it/s]  4%|▍         | 64/1449 [00:32<11:20,  2.03it/s]  4%|▍         | 65/1449 [00:32<11:17,  2.04it/s]  5%|▍         | 66/1449 [00:33<11:19,  2.03it/s]Process ForkPoolWorker-2:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-3:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-4:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-5:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-1:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 335, in get
-    res = self._reader.recv_bytes()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 407, in _recv_bytes
-    buf = self._recv(4)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 379, in _recv
-    chunk = read(handle, remaining)
-KeyboardInterrupt
-Process ForkPoolWorker-6:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/PIL/ImageFile.py", line 487, in _save
-    fh = fp.fileno()
-AttributeError: '_idat' object has no attribute 'fileno'
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 119, in worker
-    result = (True, func(*args, **kwds))
-  File "/home/lwq/sdb1/xiaoxin/WSSS/1-stage-wseg/utils/inference_tools.py", line 116, in save
-    scipy.misc.imsave(filepath, overlay255)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/numpy/lib/utils.py", line 101, in newfunc
-    return func(*args, **kwds)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/scipy/misc/pilutil.py", line 219, in imsave
-    im.save(name)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/PIL/Image.py", line 1994, in save
-    save_handler(self, fp, filename)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/PIL/PngImagePlugin.py", line 868, in _save
-    [("zip", (0, 0)+im.size, 0, rawmode)])
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/site-packages/PIL/ImageFile.py", line 501, in _save
-    l, s, d = e.encode(bufsize)
-KeyboardInterrupt
-Process ForkPoolWorker-18:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-17:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-14:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-15:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Traceback (most recent call last):
-  File "infer_val.py", line 128, in <module>
-    masks_pred = masks_pred.cpu()
-KeyboardInterrupt
-
-Error in atexit._run_exitfuncs:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/util.py", line 262, in _run_finalizers
-    finalizer()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/util.py", line 186, in __call__
-    res = self._callback(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 571, in _terminate_pool
-    cls._help_stuff_finish(inqueue, task_handler, len(pool))
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 556, in _help_stuff_finish
-    inqueue._rlock.acquire()
-KeyboardInterrupt
-Process ForkPoolWorker-16:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 334, in get
-    with self._rlock:
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/synchronize.py", line 96, in __enter__
-    return self._semlock.__enter__()
-KeyboardInterrupt
-Process ForkPoolWorker-13:
-Traceback (most recent call last):
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 258, in _bootstrap
-    self.run()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/process.py", line 93, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/pool.py", line 108, in worker
-    task = get()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/queues.py", line 335, in get
-    res = self._reader.recv_bytes()
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 407, in _recv_bytes
-    buf = self._recv(4)
-  File "/home/lwq/anaconda3/envs/WSSS/lib/python3.6/multiprocessing/connection.py", line 379, in _recv
-    chunk = read(handle, remaining)
-KeyboardInterrupt
