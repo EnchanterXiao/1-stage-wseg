@@ -88,12 +88,12 @@ def balanced_mask_loss_ce(mask, pseudo_gt, gt_labels, ignore_index=255):
     loss = batch_weight * (class_weight * loss).mean(-1)
     return loss
 
-class GroupTalkingAttention(nn.Module):
+class GroupAttention(nn.Module):
     """
     LSA: self attention within a group
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
-        super(GroupTalkingAttention, self).__init__()
+        super(GroupAttention, self).__init__()
         assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
 
         self.dim = dim
@@ -106,9 +106,6 @@ class GroupTalkingAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-        self.pre_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
-        self.post_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
-
     def forward(self, x, H, W, ws):
         B, N, C = x.shape
         h_group, w_group = H // ws, W //ws
@@ -118,10 +115,7 @@ class GroupTalkingAttention(nn.Module):
         # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, hw, n_head, ws*ws, head_dim
         q, k, v = qkv[0], qkv[1], qkv[2]  # B, hw, n_head, ws*ws, head_dim
         attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
-        attn = attn.permute(0, 1, 3, 4, 2)
-        attn = self.pre_softmax_proj(attn)
         attn = attn.softmax(dim=-2)
-        attn = self.post_softmax_proj(attn).permute(0, 1, 4, 2, 3)
         attn = self.attn_drop(
             attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
 
@@ -158,8 +152,8 @@ def network_CAM_CASA_WGAP_tf_v10(cfg):
 
             self.cfg = config
             self.num_classes = num_classes
-            self.selfattention_dim = 1024
-            self.window_size = [2, 4, 6]
+            self.selfattention_dim = 512
+            self.window_size = [2, 4]
 
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
             self.fc8 = nn.Conv2d(self.selfattention_dim, num_classes, 1, bias=False)
@@ -169,10 +163,12 @@ def network_CAM_CASA_WGAP_tf_v10(cfg):
             cls_modules = [self.fc8]
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
-            self.selfattn = GroupTalkingAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
+            self.selfattn = GroupAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
                                            attn_drop=0., proj_drop=0.)
-            self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
-            self.attention = SpatialAttention(kernel_size=7)
+            self.attn_conv = nn.Conv2d(self.selfattention_dim*len(self.window_size), self.selfattention_dim, 1, bias=False)
+            self.norm = nn.LayerNorm(self.selfattention_dim)
+            # self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
+            # self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)
             self.mask_branch = nn.Sequential(self.fc8, nn.ReLU())
 
@@ -196,6 +192,7 @@ def network_CAM_CASA_WGAP_tf_v10(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
+            attn_outputs = []
             for ws in self.window_size:
                 padh = (ws - (h%ws))%ws
                 padw = (ws - (w%ws))%ws
@@ -204,13 +201,17 @@ def network_CAM_CASA_WGAP_tf_v10(cfg):
                 attn_output = self.selfattn(attn_input, (h+padh), (w+padw), ws)
                 attn_output = torch.reshape(attn_output.permute(0, 2, 1), (bs, -1, (h+padh), (w+padw)))
                 attn_output = attn_output[:, :, :h, :w]
-                x += attn_output
-
-            x = nn.LayerNorm(x)
-            Channel_attention = self.caatention(x)
-            x = torch.mul(x, Channel_attention)
-            Spatial_weight, attention_map = self.attention(x)
-            x = torch.mul(x, Spatial_weight)
+                attn_outputs.append(attn_output)
+            attn_o = torch.cat(attn_outputs, dim=1)
+            attn_o = self.attn_conv(attn_o)
+            x += attn_o
+            x = torch.reshape(x, (bs, c, h * w)).permute(0, 2, 1)
+            x = self.norm(x)
+            x = torch.reshape(x.permute(0, 2, 1), (bs, c, h, w))
+            # Channel_attention = self.caatention(x)
+            # x = torch.mul(x, Channel_attention)
+            # Spatial_weight, attention_map = self.attention(x)
+            # x = torch.mul(x, Spatial_weight)
             x = self.mask_branch(x)
             bs, c, h, w = x.size()
             masks = F.softmax(x, dim=1)
