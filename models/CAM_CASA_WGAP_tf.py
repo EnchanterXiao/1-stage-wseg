@@ -249,6 +249,7 @@ def network_CAM_CASA_WGAP_tf(cfg):
             self.cfg = config
             self.num_classes = num_classes
             self.selfattention_dim = 1024
+            self.ws = 2
 
             # self.fc8 = nn.Conv2d(self.fan_out(), num_classes, 1, bias=False)
             self.fc7 = nn.Conv2d(self.fan_out(), self.selfattention_dim, 1, bias=False)
@@ -290,10 +291,13 @@ def network_CAM_CASA_WGAP_tf(cfg):
             x = self.forward_backbone(y)
             x = self.fc7(x)
             bs, c, h, w = x.size()
-            # print(bs, c, h, w)
-            x = torch.reshape(x, (bs, c, h*w)).permute(0, 2, 1)
-            x = self.selfattn(x, h, w)
-            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, h, w))
+            padh = (self.ws - (h % self.ws)) % self.ws
+            padw = (self.ws - (w % self.ws)) % self.ws
+            x = F.pad(x, (0, padw, 0, padh))
+            x = torch.reshape(x, (bs, c, (h+padh)*(w+padw))).permute(0, 2, 1)
+            x = self.selfattn(x, h+padh, w+padw)
+            x = torch.reshape(x.permute(0, 2, 1), (bs, -1, (h+padh), (w+padw)))
+            x = x[:, :, :h, :w]
 
             Channel_attention = self.caatention(x)
             x = torch.mul(x, Channel_attention)
