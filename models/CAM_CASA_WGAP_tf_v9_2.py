@@ -90,13 +90,13 @@ def balanced_mask_loss_ce(mask, pseudo_gt, gt_labels, ignore_index=255):
     return loss
 
 
-class GroupTalkingAttention(nn.Module):
+class GroupAttention(nn.Module):
     """
     LSA: self attention within a group
     """
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0., ws=1):
         assert ws != 1
-        super(GroupTalkingAttention, self).__init__()
+        super(GroupAttention, self).__init__()
         assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
 
         self.dim = dim
@@ -111,8 +111,8 @@ class GroupTalkingAttention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
         self.ws = ws
 
-        self.pre_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
-        self.post_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
+        # self.pre_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
+        # self.post_softmax_proj = nn.Linear(num_heads, num_heads, bias=False)
 
     def forward(self, x, query, H, W):
         B, N, C = x.shape
@@ -129,10 +129,10 @@ class GroupTalkingAttention(nn.Module):
         # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, hw, n_head, ws*ws, head_dim
         q, k, v = qk[0], qk[1], v[0]  # B, hw, n_head, ws*ws, head_dim
         attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
-        attn = attn.permute(0, 1, 3, 4, 2)
-        attn = self.pre_softmax_proj(attn)
-        attn = attn.softmax(dim=-2)
-        attn = self.post_softmax_proj(attn).permute(0, 1, 4, 2, 3)
+        # attn = attn.permute(0, 1, 3, 4, 2)
+        # attn = self.pre_softmax_proj(attn)
+        attn = attn.softmax(dim=-1)
+        # attn = self.post_softmax_proj(attn).permute(0, 1, 4, 2, 3)
         attn = self.attn_drop(
             attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
 
@@ -143,7 +143,7 @@ class GroupTalkingAttention(nn.Module):
         return x
 
 
-def network_CAM_CASA_WGAP_tf_v9(cfg):
+def network_CAM_CASA_WGAP_tf_v9_2(cfg):
     if cfg.BACKBONE == "resnet38":
         print("Backbone: ResNet38")
         backbone = ResNet38
@@ -181,7 +181,7 @@ def network_CAM_CASA_WGAP_tf_v9(cfg):
             cls_modules = [self.fc8]
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
-            self.selfattn = GroupTalkingAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
+            self.selfattn = GroupAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
                                            attn_drop=0., proj_drop=0., ws=self.window_size)
 
             self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
