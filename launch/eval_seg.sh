@@ -6,8 +6,8 @@ FILELIST=../1sw/data/val_voc.txt # validation
 ## You values here:
 #
 OUTPUT_DIR=../1sw/output
-EXP=v1124
-RUN_ID=cam_casa_wgap_tf_v9
+EXP=v1117
+RUN_ID=cam_casa_wgap_tf
 Thresh0=_0
 Thresh1=_1
 Thresh3=_3
@@ -35,8 +35,11 @@ nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_D
 #nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
 
 # with CRF
-# SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME/crf
-# nohup python eval_seg.py --data ./data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh0/crf
+nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
+
+SAVE_DIR=$OUTPUT_DIR/$DATASET/$EXP/$RUN_ID/$LISTNAME$Thresh1/crf
+nohup python eval_seg.py --data ../1sw/data --filelist $FILELIST --masks $SAVE_DIR > $SAVE_DIR.eval 2>&1 &
 
 sleep 1
 echo "Log: ${SAVE_DIR}.eval"

@@ -54,7 +54,7 @@ if __name__ == '__main__':
     prospect_threshs = [0.0, 0.1, 0.3, 0.5, 0.7]
     heatmaps = [False, False, False, False, False, False]
     scoremaps = [False, False, False, False, False, False]
-    CRFs = [False, False, False, False, False, False]
+    CRFs = [True, True, False, False, False, False]
 
     # loading the model
     args = get_arguments(sys.argv[1:])
@@ -109,35 +109,48 @@ if __name__ == '__main__':
                              heatmap=heatmap, scoremap=scoremap, CRF=crf))
         if idx not in test_id:
             continue
-        pool = mp.Pool(processes=args.workers)
+    for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
 
-        for iter, (img_name, img_orig, images_in, pads, labels, gt_mask) in enumerate(tqdm(dataloader)):
+        # cutting the masks
+        masks = []
+        with torch.no_grad():
+            cls_raw, masks_pred = model(images_in)
+            if cfg.TEST.USE_GT_LABELS:
+                labels = labels[0]
+            else:
+                cls_sigmoid = torch.sigmoid(cls_raw)
+                cls_sigmoid, _ = cls_sigmoid.max(0)
+                # cls_sigmoid = cls_sigmoid.mean(0)
+                # threshold class scores
+                labels = (cls_sigmoid > cfg.TEST.FP_CUT_SCORE)
 
-            # cutting the masks
-            masks = []
+        # saving the raw npy
+        image = dataset.denorm(img_orig[0]).numpy()
+        masks_pred = masks_pred.cpu()
+        labels = labels.type_as(masks_pred)
+        # pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+        # writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
 
-            with torch.no_grad():
-                cls_raw, masks_pred = model(images_in)
-                if cfg.TEST.USE_GT_LABELS:
-                    labels = labels[0]
-                else:
-                    cls_sigmoid = torch.sigmoid(cls_raw)
-                    cls_sigmoid, _ = cls_sigmoid.max(0)
-                    # cls_sigmoid = cls_sigmoid.mean(0)
-                    # threshold class scores
-                    labels = (cls_sigmoid > cfg.TEST.FP_CUT_SCORE)
+        processes = []
+        for idx, (prospect_thresh, heatmap, scoremap, crf) in enumerate(
+                zip(prospect_threshs, heatmaps, scoremaps, CRFs)):
+            if idx not in test_id:
+                continue
+            # pool = mp.Pool(processes=args.workers)
+            # p = mp.Process(target=writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
+            # p.start()
+            # processes.append(p)
+            writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
 
-            # saving the raw npy
-            image = dataset.denorm(img_orig[0]).numpy()
-            masks_pred = masks_pred.cpu()
-            labels = labels.type_as(masks_pred)
-            pool.apply_async(writers[idx].save, args=(img_name[0], image, masks_pred, pads, labels, gt_mask[0]))
-            # writers[idx].save(img_name[0], image, masks_pred, pads, labels, gt_mask[0])
-            timer.update_progress(float(iter + 1) / N)
-            if iter % 100 == 0:
-                msg = "Finish time: {}".format(timer.str_est_finish())
-                tqdm.write(msg)
-                sys.stdout.flush()
-        pool.close()
-        pool.join()
+        # for p in processes:
+        #     p.join()
+
+        timer.update_progress(float(iter + 1) / N)
+        if iter % 100 == 0:
+            msg = "Finish time: {}".format(timer.str_est_finish())
+            tqdm.write(msg)
+            sys.stdout.flush()
+
+        # pool.close()
+        # pool.join()
 
