@@ -7,7 +7,7 @@ FILELIST=../1sw/data/val_voc.txt # validation
 #
 OUTPUT_DIR=../1sw/output
 EXP=v1117
-RUN_ID=cam_casa_wgap_tf
+RUN_ID=cam_casa_wgap_tf_multscale
 Thresh0=_0
 Thresh1=_1
 Thresh3=_3

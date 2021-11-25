@@ -15,7 +15,7 @@ EXP=v1117
 RUN_ID=cam_casa_wgap_tf
 SNAPSHOT=e015Xs0.914
 EXTRA_ARGS=
-SAVE_ID=cam_casa_wgap_tf
+SAVE_ID=cam_casa_wgap_tf_multscale
 
 #
 ##

@@ -261,11 +261,8 @@ def network_CAM_CASA_WGAP_tf(cfg):
             if dropout:
                 cls_modules.insert(0, nn.Dropout2d(0.5))
 
-            # self.selfattn = Attention(self.selfattention_dim, self.selfattention_dim, num_heads=8,
-            #                           qkv_bias=True, qk_scale=None,
-            #                           attn_drop=0., proj_drop=0., sr_ratio=1)
             self.selfattn = GroupAttention(self.selfattention_dim, num_heads=8, qkv_bias=True, qk_scale=None,
-                                           attn_drop=0., proj_drop=0., ws=2)
+                                           attn_drop=0., proj_drop=0., ws=self.ws)
             self.caatention = ChannelAttention(in_planes=self.selfattention_dim)
             self.attention = SpatialAttention(kernel_size=7)
             self.cls_branch = nn.Sequential(*cls_modules)

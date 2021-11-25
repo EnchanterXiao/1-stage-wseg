@@ -7,7 +7,7 @@ DATASET:
   NAME: 'sbd'
   FILENAME: "train_augvoc"
 TRAIN:
-  BATCH_SIZE: 16
+  BATCH_SIZE: 8
   NUM_EPOCHS: 25
   NUM_WORKERS: 8
   PRETRAIN: 5
@@ -26,10 +26,10 @@ NET:
 TEST:
   METHOD: "multiscale"
   DATA_ROOT: "../1sw/data"
-  FLIP: False
-  BATCH_SIZE: 1 # 4 scales, +1 flip for each
+  FLIP: True #False
+  BATCH_SIZE: 8 #1 # 4 scales, +1 flip for each
   PAD_SIZE: [1024, 1024] #[0, 0] #[1024, 1024]
-  SCALES: [1] #[1, 0.5, 1.5, 2.0]
+  SCALES: [1, 0.5, 1.5, 2.0] #[1] #[1, 0.5, 1.5, 2.0]
   FP_CUT_SCORE: 0.1
   BG_POW: 3  #1 or 3
   USE_GT_LABELS: True
